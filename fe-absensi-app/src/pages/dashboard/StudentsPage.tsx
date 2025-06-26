@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // Tambahkan useCallback
 import { Search, Plus, Edit, Trash2, QrCode, Download, X, AlertCircle } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react'; 
+import { QRCodeCanvas } from 'qrcode.react'; // Import yang sudah benar
 import { useAuth } from '../../contexts/AuthContext';
-import { v4 as uuidv4 } from 'uuid'; // Import uuid untuk ID unik
+import api from '../../lib/api'; // Import instance Axios kita
+import { v4 as uuidv4 } from 'uuid'; // Import uuid untuk ID unik di frontend (jika nanti perlu di client-side)
 
-// Definisikan interface Student secara manual karena tidak lagi dari Supabase
+// Interface Student yang harus sesuai dengan model di backend
 interface Student {
   id: string;
   nis: string;
   name: string;
   class: string;
-  gender: 'L' | 'P'; // Laki-laki atau Perempuan
-  birth_date: string; // Format YYYY-MM-DD
+  gender: 'L' | 'P';
+  birth_date: string;
   address?: string;
   parent_name?: string;
   phone_number?: string;
@@ -19,8 +20,12 @@ interface Student {
   updated_at?: string;
 }
 
-const StudentsPage = () => {
-  const { user, hasPermission } = useAuth(); // Ambil hasPermission juga
+// Ini Wajib Kamu Ingat! (Prinsip #1: Konsep CRUD di Frontend)
+// 'Create', 'Read', 'Update', 'Delete' adalah operasi dasar pada data.
+// Setiap operasi ini akan memanggil endpoint API di backend.
+
+const StudentsPage: React.FC = () => { // Menggunakan React.FC untuk tipe yang lebih baik
+  const { user, hasPermission } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -28,9 +33,8 @@ const StudentsPage = () => {
   const [showQR, setShowQR] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showConfirmModal, setShowConfirmModal] = useState(false); // State untuk modal konfirmasi
-  const [studentToDeleteId, setStudentToDeleteId] = useState<string | null>(null); // ID siswa yang akan dihapus
-
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [studentToDeleteId, setStudentToDeleteId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<Omit<Student, 'id' | 'created_at' | 'updated_at'>>({
     nis: '',
@@ -45,31 +49,28 @@ const StudentsPage = () => {
 
   const classList = ['1A', '1B', '2A', '2B', '3A', '3B', '4A', '4B', '5A', '5B', '6A', '6B'];
 
-  // Mock data untuk demo
-  const mockStudents: Student[] = [
-    { id: 'mock-1', nis: '001', name: 'Budi Santoso', class: '1A', gender: 'L', birth_date: '2015-01-15', address: 'Jl. Melati No. 1', parent_name: 'Pak Santoso', phone_number: '081234567890' },
-    { id: 'mock-2', nis: '002', name: 'Siti Aminah', class: '2B', gender: 'P', birth_date: '2014-03-20', address: 'Jl. Dahlia No. 5', parent_name: 'Ibu Aminah', phone_number: '081298765432' },
-    { id: 'mock-3', nis: '003', name: 'Agus Salim', class: '3A', gender: 'L', birth_date: '2013-07-01', address: 'Jl. Cemara No. 10', parent_name: 'Pak Salim', phone_number: '081311223344' },
-    { id: 'mock-4', nis: '004', name: 'Dewi Lestari', class: '4B', gender: 'P', birth_date: '2012-09-25', address: 'Jl. Anggrek No. 15', parent_name: 'Ibu Lestari', phone_number: '081555667788' },
-  ];
+  // Ini Wajib Kamu Ingat! (Prinsip #3: 'useCallback' untuk Fungsi yang Bergantung pada State)
+  // `loadStudents` adalah fungsi yang akan dipanggil di `useEffect` dan mungkin dari event handler.
+  // Menggunakan `useCallback` akan mencegah fungsi ini dibuat ulang setiap kali komponen render,
+  // yang bisa membantu performa dan mencegah looping tak terbatas di `useEffect` jika tidak hati-hati.
+  const loadStudents = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      // Panggil API GET untuk mengambil semua siswa
+      const response = await api.get('/students'); // Endpoint: /api/students
+      setStudents(response.data || []);
+    } catch (err) {
+      console.error('Error loading students:', err);
+      setError('Gagal memuat data siswa. Silakan coba lagi.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []); // [] berarti fungsi ini hanya dibuat sekali saat komponen di-mount
 
   useEffect(() => {
-    // Simulasi loading data dari BE
-    const timer = setTimeout(() => {
-      setStudents(mockStudents);
-      setIsLoading(false);
-    }, 1000); // Simulasi delay 1 detik
-    return () => clearTimeout(timer);
-  }, []);
-
-  const loadStudents = async () => {
-    // INI YANG DIGANTI: Tidak ada lagi panggilan supabase
-    setIsLoading(true);
-    setError(null);
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulasi API call
-    setStudents(mockStudents); // Gunakan mock data untuk demo
-    setIsLoading(false);
-  };
+    loadStudents();
+  }, [loadStudents]); // Tambahkan loadStudents sebagai dependency untuk useEffect
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -79,35 +80,35 @@ const StudentsPage = () => {
     }));
   };
 
+  // Ini Wajib Kamu Ingat! (Prinsip #1: Kirim Data Lengkap ke API)
+  // Pastikan `formData` yang dikirim ke backend sudah lengkap dan sesuai skema yang diharapkan.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setError(null);
-      setIsLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 800)); // Simulasi API call
-
+      setIsLoading(true); // Aktifkan loading saat submit
       if (selectedStudent) {
-        // Update existing student (mock)
-        setStudents(prevStudents =>
-          prevStudents.map(s =>
-            s.id === selectedStudent.id ? { ...s, ...formData } : s
-          )
-        );
+        // Panggil API PUT untuk update siswa
+        await api.put(`/students/${selectedStudent.id}`, formData); // Endpoint: /api/students/:id
+        console.log('Siswa berhasil diperbarui:', formData);
       } else {
-        // Add new student (mock)
-        const newStudent: Student = {
-          id: uuidv4(), // Generate unique ID
-          created_at: new Date().toISOString(),
-          ...formData
-        };
-        setStudents(prevStudents => [...prevStudents, newStudent]);
+        // Panggil API POST untuk menambah siswa baru
+        await api.post('/students', formData); // Endpoint: /api/students
+        console.log('Siswa berhasil ditambahkan:', formData);
       }
       
+      await loadStudents(); // Muat ulang daftar siswa setelah operasi
       resetForm();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error saving student');
+      console.error('Error saving student:', err);
+      // Tangani error dari backend (misal: NIS sudah ada)
+      if (api.isAxiosError(err) && err.response && err.response.data && err.response.data.message) {
+        setError(err.response.data.message);
+      } else {
+        setError('Terjadi kesalahan saat menyimpan data siswa. Silakan coba lagi.');
+      }
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Nonaktifkan loading
     }
   };
 
@@ -151,16 +152,16 @@ const StudentsPage = () => {
     if (studentToDeleteId) {
       try {
         setError(null);
-        setIsLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 800)); // Simulasi API call
-        
-        // Hapus student dari state (mock)
-        setStudents(prevStudents => prevStudents.filter(s => s.id !== studentToDeleteId));
-        
+        setIsLoading(true); // Aktifkan loading saat delete
+        // Panggil API DELETE untuk menghapus siswa
+        await api.delete(`/students/${studentToDeleteId}`); // Endpoint: /api/students/:id
+        console.log(`Siswa dengan ID ${studentToDeleteId} berhasil dihapus.`);
+        await loadStudents(); // Muat ulang daftar siswa
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error deleting student');
+        console.error('Error deleting student:', err);
+        setError('Terjadi kesalahan saat menghapus siswa. Silakan coba lagi.');
       } finally {
-        setIsLoading(false);
+        setIsLoading(false); // Nonaktifkan loading
         setShowConfirmModal(false);
         setStudentToDeleteId(null);
       }
@@ -172,15 +173,13 @@ const StudentsPage = () => {
     setStudentToDeleteId(null);
   };
 
-
   const filteredStudents = students.filter(student =>
     student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.nis.includes(searchTerm)
+    student.nis.toLowerCase().includes(searchTerm.toLowerCase()) // Pastikan search NIS juga lowercase
   );
 
   const generateQRData = (student: Student) => {
-    // Pastikan student tidak null atau undefined sebelum mengakses propertinya
-    if (!student) return '';
+    if (!student) return ''; // Tambahkan check null
     return JSON.stringify({
       id: student.id,
       nis: student.nis,
@@ -204,7 +203,7 @@ const StudentsPage = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading) { // Loading state untuk halaman utama
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
@@ -213,7 +212,10 @@ const StudentsPage = () => {
   }
 
   // Periksa permission sebelum merender konten
-  if (!hasPermission('manage_students')) { // Sesuaikan permission jika perlu
+  // Ini Wajib Kamu Ingat! (Prinsip #5: Otorisasi di Frontend dan Backend)
+  // Frontend hanya menyembunyikan UI, Backend yang sebenarnya MELINDUNGI API.
+  // Jangan hanya bergantung pada Frontend untuk keamanan!
+  if (!hasPermission('manage_students')) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center text-gray-600">
         <AlertCircle className="h-16 w-16 mb-4 text-red-500" />
@@ -223,12 +225,11 @@ const StudentsPage = () => {
     );
   }
 
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Manajemen Siswa</h1>
-        {hasPermission('manage_students') && ( // Hanya tampilkan tombol jika user punya izin
+        {hasPermission('manage_students') && (
           <button
             onClick={() => setShowForm(true)}
             className="btn-primary flex items-center"
@@ -288,63 +289,64 @@ const StudentsPage = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredStudents.length === 0 && (
+              {filteredStudents.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
                     Tidak ada data siswa.
                   </td>
                 </tr>
+              ) : (
+                filteredStudents.map((student) => (
+                  <tr key={student.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {student.nis}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {student.name}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {student.class}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {student.gender === 'L' ? 'Laki-laki' : 'Perempuan'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(student.birth_date).toLocaleDateString('id-ID')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {student.parent_name}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex justify-end space-x-2">
+                        {hasPermission('manage_students') && (
+                          <>
+                            <button
+                              onClick={() => handleEdit(student)}
+                              className="text-primary-600 hover:text-primary-900"
+                            >
+                              <Edit className="h-5 w-5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(student.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </button>
+                          </>
+                        )}
+                        {hasPermission('generate_qr') && (
+                          <button
+                            onClick={() => setShowQR(student.id)}
+                            className="text-gray-600 hover:text-gray-900"
+                          >
+                            <QrCode className="h-5 w-5" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
-              {filteredStudents.map((student) => (
-                <tr key={student.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {student.nis}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {student.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {student.class}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {student.gender === 'L' ? 'Laki-laki' : 'Perempuan'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(student.birth_date).toLocaleDateString('id-ID')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {student.parent_name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex justify-end space-x-2">
-                      {hasPermission('manage_students') && (
-                        <>
-                          <button
-                            onClick={() => handleEdit(student)}
-                            className="text-primary-600 hover:text-primary-900"
-                          >
-                            <Edit className="h-5 w-5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(student.id)} // Ganti ke handleDeleteClick
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <Trash2 className="h-5 w-5" />
-                          </button>
-                        </>
-                      )}
-                      {hasPermission('generate_qr') && ( // Hanya tampilkan tombol jika user punya izin
-                        <button
-                          onClick={() => setShowQR(student.id)}
-                          className="text-gray-600 hover:text-gray-900"
-                        >
-                          <QrCode className="h-5 w-5" />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
             </tbody>
           </table>
         </div>
@@ -507,7 +509,7 @@ const StudentsPage = () => {
             <div className="p-5 flex flex-col items-center">
               {showQR && (
                 <>
-                  <QRCodeSVG
+                  <QRCodeCanvas
                     id={`qr-${showQR}`}
                     value={generateQRData(students.find(s => s.id === showQR)!)}
                     size={200}

@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { initializeDatabase } from './utils/database.js';
+import authRoutes from './routes/authRoutes.js';
+import studentRoutes from './routes/studentRoutes.js'; 
 
 dotenv.config();
 
@@ -16,6 +18,11 @@ app.use(express.json()); // Allow Express proccesing JSON from request body
 initializeDatabase().then(() => {
     console.log('Database Berhasil Diinisialisasi, server siap.');
 
+    // Gunakan Auth Routes
+    app.use('/api/auth', authRoutes); // All Route in authRoutes will be started by /api/auth
+
+    // Gunakan Student Routes
+    app.use('/api/students', studentRoutes);
     //Route Sederhana untuk Test
     app.get('/', (req, res) => {
         res.send('API Backend Absensi QR Code berjalan!');
