@@ -512,7 +512,7 @@ const StudentsPage: React.FC = () => { // Menggunakan React.FC untuk tipe yang l
                   <QRCodeCanvas
                     id={`qr-${showQR}`}
                     value={generateQRData(students.find(s => s.id === showQR)!)}
-                    size={200}
+                    size={512}
                     level="H"
                     includeMargin={true}
                   />

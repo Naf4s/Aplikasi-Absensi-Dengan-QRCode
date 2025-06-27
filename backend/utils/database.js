@@ -45,8 +45,20 @@ export async function initializeDatabase() {
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
       );
+      CREATE TABLE IF NOT EXISTS attendance_records (
+        id TEXT PRIMARY KEY,
+        student_id TEXT NOT NULL,
+        date TEXT NOT NULL,
+        time_in TEXT,
+        status TEXT NOT NULL, -- 'present', 'absent', 'sick', 'permit'
+        notes TEXT,
+        marked_by_user_id TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+        FOREIGN KEY (marked_by_user_id) REFERENCES users(id) ON DELETE SET NULL
+      );
     `);
-    console.log('Tabel "users" dan "students" sudah ada atau berhasil dibuat.');
+    console.log('Tabel "users", "students", dan "attendance_records" sudah ada atau berhasil dibuat.');
 
     // Seed data (data awal) untuk user admin dan teacher jika belum ada
     const existingAdmin = await db.get('SELECT * FROM users WHERE email = ?', 'admin@example.com');

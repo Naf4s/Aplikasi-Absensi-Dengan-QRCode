@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import { initializeDatabase } from './utils/database.js';
 import authRoutes from './routes/authRoutes.js';
 import studentRoutes from './routes/studentRoutes.js'; 
+import attendanceRoutes from './routes/attendanceRoutes.js';
+import authMiddleware from './middleware/authMiddleware.js';
 
 dotenv.config();
 
@@ -20,9 +22,8 @@ initializeDatabase().then(() => {
 
     // Gunakan Auth Routes
     app.use('/api/auth', authRoutes); // All Route in authRoutes will be started by /api/auth
-
-    // Gunakan Student Routes
-    app.use('/api/students', studentRoutes);
+    app.use('/api/students', authMiddleware, studentRoutes);
+    app.use('/api/attendance', authMiddleware, attendanceRoutes);
     //Route Sederhana untuk Test
     app.get('/', (req, res) => {
         res.send('API Backend Absensi QR Code berjalan!');
