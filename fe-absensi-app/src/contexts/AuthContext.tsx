@@ -1,5 +1,7 @@
+// fe-absensi-app/src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../lib/api';
+import axios from 'axios';
 
 interface User {
   id: string;
@@ -18,7 +20,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Define permissions for each role
+// Ini Wajib Kamu Ingat! (Definisi Izin per Role)
+// Pastikan 'admin' memiliki permission 'manage_classes' agar bisa mengakses halaman kelas.
 const rolePermissions = {
   admin: [
     'manage_students',
@@ -26,7 +29,9 @@ const rolePermissions = {
     'view_attendance',
     'manage_backup',
     'manage_access',
-    'mark_attendance'
+    'mark_attendance',
+    'manage_users',
+    'manage_classes' // PERBAIKAN: Tambahkan permission 'manage_classes' untuk admin
   ],
   teacher: [
     'view_attendance',
@@ -43,20 +48,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const checkAuthStatus = async () => {
       const storedToken = localStorage.getItem('authToken');
       if (storedToken) {
-        try{
+        try {
           const decodedPayload: any = JSON.parse(atob(storedToken.split('.')[1]));
-          if (decodedPayload && decodedPayload.exp * 1000 > Date.now()){
+          if (decodedPayload && decodedPayload.exp * 1000 > Date.now()) {
             setUser({
               id: decodedPayload.id,
-              name: decodedPayload.name || decodedPayload.email, // get name from payload or email
+              name: decodedPayload.name || decodedPayload.email,
               email: decodedPayload.email,
               role: decodedPayload.role
             });
           } else {
-            localStorage.removeItem('authToken'); // Erase expired token
+            localStorage.removeItem('authToken');
           }
-        }catch (error) {
-          console.error("Failed to decode tokenor token invalid", error);
+        } catch (error) {
+          console.error("Gagal mendecode token atau token tidak valid", error);
           localStorage.removeItem('authToken');
         }
       }
@@ -67,26 +72,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      // Panggil API login dari backend
       const response = await api.post('/auth/login', { email, password });
       const { token, user: userData } = response.data;
 
-      // Simpan token di localStorage
       localStorage.setItem('authToken', token);
-      // Set user di state AuthContext
       setUser(userData);
-      return true; // Login berhasil
+      return true;
     } catch (error) {
-      console.error('Login failed:', error);
-      // Tangani error dari backend (misal: 401 Unauthorized)
-      // Contoh: if (axios.isAxiosError(error) && error.response?.status === 401) { ... }
-      return false; // Login gagal
+      console.error('Login gagal:', error);
+      return false;
     }
   };
 
   const logout = () => {
-      localStorage.removeItem('authToken');
-      setUser(null);
+    localStorage.removeItem('authToken');
+    setUser(null);
   };
 
   const hasPermission = (permission: string): boolean => {

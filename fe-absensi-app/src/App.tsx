@@ -1,12 +1,11 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import MainLayout from './layouts/MainLayout'; 
+import DashboardLayout from './layouts/DashboardLayout'; 
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
-// Layouts
-import MainLayout from './layouts/MainLayout';
-import DashboardLayout from './layouts/DashboardLayout';
-
-// Public Pages
+// Public Pages (yang akan tetap digunakan)
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import ProgramsPage from './pages/ProgramsPage';
@@ -15,25 +14,44 @@ import NewsPage from './pages/NewsPage';
 import ContactPage from './pages/ContactPage';
 import LoginPage from './pages/LoginPage';
 
-// Protected Pages
-import DashboardPage from './pages/dashboard/DashboardPage';
+// Protected Pages (Dashboard SIPABSEN)
+import DashboardPage from './pages/dashboard/DashboardPage'; // Default dashboard page
 import AttendancePage from './pages/dashboard/AttendancePage';
 import ScannerPage from './pages/dashboard/ScannerPage';
 import StudentsPage from './pages/dashboard/StudentsPage';
 import ReportsPage from './pages/dashboard/ReportsPage';
 import SettingsPage from './pages/dashboard/SettingsPage';
+import UsersPage from './pages/dashboard/UsersPage';
+import ClassesPage from './pages/dashboard/ClassesPage'; // Import ClassesPage yang baru
 
-// Components
-import ProtectedRoute from './components/auth/ProtectedRoute';
-import ScrollToTop from './components/common/ScrollToTop';
+// Komponen ini akan menangani redirect setelah login
+const AuthRedirect: React.FC = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading) {
+      if (user) {
+        if (user.role === 'teacher') {
+          navigate('/dashboard/attendance', { replace: true });
+        } else { // admin atau role lain
+          navigate('/dashboard', { replace: true });
+        }
+      } else {
+        navigate('/login-form', { replace: true });
+      }
+    }
+  }, [user, loading, navigate]);
+
+  return <div className="flex items-center justify-center min-h-screen">Redirecting...</div>;
+};
 
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <ScrollToTop />
         <Routes>
-          {/* Public Routes */}
+          {/* Public Routes (Web Profile) */}
           <Route path="/" element={<MainLayout />}>
             <Route index element={<HomePage />} />
             <Route path="about" element={<AboutPage />} />
@@ -43,12 +61,15 @@ function App() {
             <Route path="contact" element={<ContactPage />} />
           </Route>
           
-          <Route path="/login" element={<LoginPage />} />
+          {/* Halaman Login */}
+          <Route path="/login" element={<AuthRedirect />} /> 
+          <Route path="/login-form" element={<LoginPage />} />
           
-          {/* Protected Routes */}
+
+          {/* Protected Routes (Dashboard SIPABSEN) */}
           <Route path="/dashboard" element={
             <ProtectedRoute>
-              <DashboardLayout />
+              <DashboardLayout /> 
             </ProtectedRoute>
           }>
             <Route index element={<DashboardPage />} />
@@ -57,6 +78,8 @@ function App() {
             <Route path="students" element={<StudentsPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="users" element={<UsersPage />} /> 
+            <Route path="classes" element={<ClassesPage />} /> {/* Route baru untuk Manajemen Kelas */}
           </Route>
         </Routes>
       </Router>
