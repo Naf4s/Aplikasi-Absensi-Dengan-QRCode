@@ -1,18 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react'; // Tambahkan useCallback
-import { Search, Plus, Edit, Trash2, QrCode, Download, X, AlertCircle } from 'lucide-react';
-import { QRCodeCanvas } from 'qrcode.react'; // Import yang sudah benar
+import React, { useState, useEffect, useCallback, useRef } from 'react'; // Tambah useRef
+import { Search, Plus, Edit, Trash2, QrCode, Download, X, AlertCircle, Upload } from 'lucide-react'; // Tambah Upload icon
+import { QRCodeCanvas } from 'qrcode.react'; 
 import { useAuth } from '../../contexts/AuthContext';
-import api from '../../lib/api'; // Import instance Axios kita
-import { v4 as uuidv4 } from 'uuid'; // Import uuid untuk ID unik di frontend (jika nanti perlu di client-side)
+import api from '../../lib/api';
+import axios from 'axios';
+import * as XLSX from 'xlsx'; // Import library XLSX
 
-// Interface Student yang harus sesuai dengan model di backend
+// Ini Wajib Kamu Ingat! (Konsistensi Interface Student)
+// Pastikan interface ini sesuai dengan model siswa di backend.
 interface Student {
   id: string;
   nis: string;
   name: string;
   class: string;
   gender: 'L' | 'P';
-  birth_date: string;
+  birth_date: string; // Format YYYY-MM-DD
   address?: string;
   parent_name?: string;
   phone_number?: string;
@@ -20,12 +22,17 @@ interface Student {
   updated_at?: string;
 }
 
-// Ini Wajib Kamu Ingat! (Prinsip #1: Konsep CRUD di Frontend)
-// 'Create', 'Read', 'Update', 'Delete' adalah operasi dasar pada data.
-// Setiap operasi ini akan memanggil endpoint API di backend.
+// Ini Wajib Kamu Ingat! (Interface untuk Kelas)
+// Interface ini harus sesuai dengan data kelas yang dikembalikan oleh backend.
+interface ClassItem {
+  id: string;
+  name: string;
+  homeroom_teacher_id?: string | null;
+  homeroom_teacher_name?: string | null;
+}
 
-const StudentsPage: React.FC = () => { // Menggunakan React.FC untuk tipe yang lebih baik
-  const { user, hasPermission } = useAuth();
+const StudentsPage: React.FC = () => {
+  const { user: currentUser, hasPermission } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -47,30 +54,52 @@ const StudentsPage: React.FC = () => { // Menggunakan React.FC untuk tipe yang l
     phone_number: ''
   });
 
-  const classList = ['1A', '1B', '2A', '2B', '3A', '3B', '4A', '4B', '5A', '5B', '6A', '6B'];
+  const fileInputRef = useRef<HTMLInputElement>(null); // Ref untuk input file Excel
+  const [importResults, setImportResults] = useState<any[] | null>(null); // Untuk hasil impor
+  const [showImportResultsModal, setShowImportResultsModal] = useState(false); // Modal hasil impor
 
-  // Ini Wajib Kamu Ingat! (Prinsip #3: 'useCallback' untuk Fungsi yang Bergantung pada State)
-  // `loadStudents` adalah fungsi yang akan dipanggil di `useEffect` dan mungkin dari event handler.
-  // Menggunakan `useCallback` akan mencegah fungsi ini dibuat ulang setiap kali komponen render,
-  // yang bisa membantu performa dan mencegah looping tak terbatas di `useEffect` jika tidak hati-hati.
+  // Ini Wajib Kamu Ingat! (State Baru untuk Daftar Kelas Dinamis)
+  const [classes, setClasses] = useState<ClassItem[]>([]); // Untuk menyimpan daftar kelas dari backend
+
+
   const loadStudents = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
-      // Panggil API GET untuk mengambil semua siswa
-      const response = await api.get('/students'); // Endpoint: /api/students
+      const response = await api.get('/students');
       setStudents(response.data || []);
     } catch (err) {
       console.error('Error loading students:', err);
-      setError('Gagal memuat data siswa. Silakan coba lagi.');
+      let msg = 'Gagal memuat data siswa. Silakan coba lagi.';
+      if (axios.isAxiosError(err) && err.response && err.response.data && err.response.data.message) {
+        msg = err.response.data.message;
+      }
+      setError(msg);
+      setStudents([]);
     } finally {
       setIsLoading(false);
     }
-  }, []); // [] berarti fungsi ini hanya dibuat sekali saat komponen di-mount
+  }, []);
+
+  // Ini Wajib Kamu Ingat! (Fungsi untuk Mengambil Daftar Kelas dari Backend)
+  const fetchClasses = useCallback(async () => {
+    try {
+      // Endpoint /api/classes dilindungi oleh authorizeRoles('admin')
+      const response = await api.get('/classes');
+      setClasses(response.data || []);
+    } catch (err) {
+      console.error('Error fetching classes:', err);
+      // Jangan set error di sini agar tidak menimpa error utama loading siswa
+    }
+  }, []);
 
   useEffect(() => {
     loadStudents();
-  }, [loadStudents]); // Tambahkan loadStudents sebagai dependency untuk useEffect
+    // Panggil fetchClasses saat komponen pertama kali di-mount atau saat currentUser berubah
+    if (currentUser?.role === 'admin') { // Hanya admin yang perlu daftar kelas lengkap untuk form ini
+      fetchClasses();
+    }
+  }, [loadStudents, fetchClasses, currentUser]); // Tambah fetchClasses dan currentUser ke dependencies
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -80,35 +109,30 @@ const StudentsPage: React.FC = () => { // Menggunakan React.FC untuk tipe yang l
     }));
   };
 
-  // Ini Wajib Kamu Ingat! (Prinsip #1: Kirim Data Lengkap ke API)
-  // Pastikan `formData` yang dikirim ke backend sudah lengkap dan sesuai skema yang diharapkan.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setError(null);
-      setIsLoading(true); // Aktifkan loading saat submit
+      setIsLoading(true);
       if (selectedStudent) {
-        // Panggil API PUT untuk update siswa
-        await api.put(`/students/${selectedStudent.id}`, formData); // Endpoint: /api/students/:id
+        await api.put(`/students/${selectedStudent.id}`, formData);
         console.log('Siswa berhasil diperbarui:', formData);
       } else {
-        // Panggil API POST untuk menambah siswa baru
-        await api.post('/students', formData); // Endpoint: /api/students
+        await api.post('/students', formData);
         console.log('Siswa berhasil ditambahkan:', formData);
       }
       
-      await loadStudents(); // Muat ulang daftar siswa setelah operasi
+      await loadStudents();
       resetForm();
     } catch (err) {
       console.error('Error saving student:', err);
-      // Tangani error dari backend (misal: NIS sudah ada)
-      if (api.isAxiosError(err) && err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message);
-      } else {
-        setError('Terjadi kesalahan saat menyimpan data siswa. Silakan coba lagi.');
+      let msg = 'Terjadi kesalahan saat menyimpan data siswa.';
+      if (axios.isAxiosError(err) && err.response && err.response.data && err.response.data.message) {
+        msg = err.response.data.message;
       }
+      setError(msg);
     } finally {
-      setIsLoading(false); // Nonaktifkan loading
+      setIsLoading(false);
     }
   };
 
@@ -143,43 +167,42 @@ const StudentsPage: React.FC = () => { // Menggunakan React.FC untuk tipe yang l
     setShowForm(true);
   };
 
-  const handleDeleteClick = (id: string) => {
+  const handleDeleteConfirmation = (id: string) => {
     setStudentToDeleteId(id);
     setShowConfirmModal(true);
   };
 
-  const confirmDelete = async () => {
-    if (studentToDeleteId) {
-      try {
-        setError(null);
-        setIsLoading(true); // Aktifkan loading saat delete
-        // Panggil API DELETE untuk menghapus siswa
-        await api.delete(`/students/${studentToDeleteId}`); // Endpoint: /api/students/:id
-        console.log(`Siswa dengan ID ${studentToDeleteId} berhasil dihapus.`);
-        await loadStudents(); // Muat ulang daftar siswa
-      } catch (err) {
-        console.error('Error deleting student:', err);
-        setError('Terjadi kesalahan saat menghapus siswa. Silakan coba lagi.');
-      } finally {
-        setIsLoading(false); // Nonaktifkan loading
-        setShowConfirmModal(false);
-        setStudentToDeleteId(null);
-      }
-    }
-  };
+  const handleDelete = async () => {
+    if (!studentToDeleteId) return;
 
-  const cancelDelete = () => {
-    setShowConfirmModal(false);
-    setStudentToDeleteId(null);
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      await api.delete(`/students/${studentToDeleteId}`);
+      console.log('Siswa berhasil dihapus:', studentToDeleteId);
+      setConfirmDeleteModal(false);
+      setUserToDeleteId(null);
+      await loadStudents();
+    } catch (err) {
+      console.error('Error deleting student:', err);
+      let msg = 'Terjadi kesalahan saat menghapus siswa.';
+      if (axios.isAxiosError(err) && err.response && err.response.data && err.response.data.message) {
+        msg = err.response.data.message;
+      }
+      setError(msg);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const filteredStudents = students.filter(student =>
     student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.nis.toLowerCase().includes(searchTerm.toLowerCase()) // Pastikan search NIS juga lowercase
+    student.nis.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const generateQRData = (student: Student) => {
-    if (!student) return ''; // Tambahkan check null
+    if (!student) return '';
     return JSON.stringify({
       id: student.id,
       nis: student.nis,
@@ -203,19 +226,103 @@ const StudentsPage: React.FC = () => { // Menggunakan React.FC untuk tipe yang l
     }
   };
 
-  if (isLoading) { // Loading state untuk halaman utama
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
-      </div>
-    );
-  }
+  // Ini Wajib Kamu Ingat! (Fungsi untuk Memproses File Excel)
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-  // Periksa permission sebelum merender konten
-  // Ini Wajib Kamu Ingat! (Prinsip #5: Otorisasi di Frontend dan Backend)
-  // Frontend hanya menyembunyikan UI, Backend yang sebenarnya MELINDUNGI API.
-  // Jangan hanya bergantung pada Frontend untuk keamanan!
-  if (!hasPermission('manage_students')) {
+    setIsLoading(true);
+    setError(null);
+    setImportResults(null);
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        
+        // Convert worksheet to JSON array
+        // header: 1 means first row is header, default is array of arrays
+        const jsonStudents: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 }); 
+
+        if (jsonStudents.length < 2) {
+            throw new Error("File Excel kosong atau tidak memiliki header.");
+        }
+
+        // Ini Wajib Kamu Ingat! (Format Kolom Excel yang Diharapkan)
+        // Sesuaikan mapping ini dengan kolom yang kamu harapkan di Excel
+        // Contoh header yang diharapkan: NIS, Nama, Kelas, JenisKelamin, TanggalLahir, Alamat, NamaOrangTua, NomorTelepon
+        const headers = jsonStudents[0].map((h: string) => h ? h.toLowerCase().replace(/[^a-z0-9]/g, '') : ''); // Bersihkan header dan handle null/undefined
+        const requiredHeaders = ['nis', 'nama', 'kelas', 'jeniskelamin', 'tanggallahir'];
+        const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
+        if (missingHeaders.length > 0) {
+            throw new Error(`Header Excel tidak lengkap. Diperlukan: ${requiredHeaders.join(', ')}. Yang hilang: ${missingHeaders.join(', ')}`);
+        }
+
+        const studentsToImport = [];
+        for (let i = 1; i < jsonStudents.length; i++) { // Mulai dari baris kedua (data)
+            const row = jsonStudents[i];
+            const student: any = {};
+            // Pastikan baris memiliki data yang cukup sebelum diakses
+            if (!row || row.length === 0 || row.every((cell: any) => cell === null || cell === undefined || String(cell).trim() === '')) {
+                // Baris kosong, lewati
+                continue;
+            }
+
+            requiredHeaders.forEach(reqHeader => {
+                const colIndex = headers.indexOf(reqHeader);
+                if (colIndex !== -1 && row[colIndex] !== undefined) {
+                    student[reqHeader] = row[colIndex];
+                }
+            });
+
+            // Map ke format yang sesuai dengan backend
+            studentsToImport.push({
+                nis: String(student.nis || '').trim(),
+                name: String(student.nama || '').trim(),
+                class: String(student.kelas || '').trim(), // Pastikan nama kelas dari Excel sesuai dengan nama kelas di DB
+                gender: String(student.jeniskelamin || '').trim().toUpperCase() === 'P' ? 'P' : 'L', // Pastikan L/P
+                // Tanggal lahir dari Excel (seringkali berupa angka serial Excel date number)
+                // Jika dari Excel adalah number, XLSX.SSF.parse_date_code bisa membantu
+                birth_date: student.tanggallahir ? 
+                    (typeof student.tanggallahir === 'number' 
+                        ? XLSX.SSF.parse_date_code(student.tanggallahir).toISOString().split('T')[0] 
+                        : new Date(student.tanggallahir).toISOString().split('T')[0]) 
+                    : '', // Format YYYY-MM-DD
+                address: String(student.alamat || '').trim(),
+                parent_name: String(student.namaorangtua || '').trim(),
+                phone_number: String(student.nomortelepon || '').trim(),
+            });
+        }
+
+        if (studentsToImport.length === 0) {
+            throw new Error("Tidak ada data siswa yang valid ditemukan setelah header.");
+        }
+
+        // Kirim data ke backend untuk impor massal
+        const response = await api.post('/students/bulk-import', studentsToImport);
+        setImportResults(response.data.results);
+        setShowImportResultsModal(true);
+        await loadStudents(); // Muat ulang daftar siswa setelah impor
+        
+      } catch (err: any) {
+        console.error('Error processing file or importing students:', err);
+        setError(`Gagal mengimpor siswa: ${err.message || 'Terjadi kesalahan.'}`);
+        setImportResults(null); // Clear previous results
+        setShowImportResultsModal(false);
+      } finally {
+        setIsLoading(false);
+        if (fileInputRef.current) fileInputRef.current.value = ''; // Reset input file
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  // Ini Wajib Kamu Ingat! (Otorisasi Frontend - Melindungi Halaman)
+  // Hanya admin yang bisa mengakses halaman ini.
+  if (!hasPermission('manage_students') && currentUser?.role !== 'admin') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center text-gray-600">
         <AlertCircle className="h-16 w-16 mb-4 text-red-500" />
@@ -229,7 +336,23 @@ const StudentsPage: React.FC = () => { // Menggunakan React.FC untuk tipe yang l
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Manajemen Siswa</h1>
-        {hasPermission('manage_students') && (
+        <div className="flex space-x-2">
+          {/* Tombol Import Excel */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="btn-outline flex items-center"
+          >
+            <Upload className="h-5 w-5 mr-1" />
+            Import Excel
+          </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            accept=".xlsx, .xls"
+            className="hidden"
+          />
+          {/* Tombol Tambah Siswa */}
           <button
             onClick={() => setShowForm(true)}
             className="btn-primary flex items-center"
@@ -237,7 +360,7 @@ const StudentsPage: React.FC = () => { // Menggunakan React.FC untuk tipe yang l
             <Plus className="h-5 w-5 mr-1" />
             Tambah Siswa
           </button>
-        )}
+        </div>
       </div>
 
       {error && (
@@ -247,110 +370,97 @@ const StudentsPage: React.FC = () => { // Menggunakan React.FC untuk tipe yang l
         </div>
       )}
 
-      {/* Search Bar */}
-      <div className="flex items-center bg-white rounded-lg shadow px-4 py-2">
-        <Search className="h-5 w-5 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Cari siswa berdasarkan nama atau NIS..."
-          className="ml-2 flex-1 outline-none"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
-
-      {/* Student List */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  NIS
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Nama
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Kelas
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Jenis Kelamin
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tanggal Lahir
-                </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Nama Orang Tua
-                </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Aksi
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredStudents.length === 0 ? (
+      {isLoading ? (
+        <div className="flex items-center justify-center min-h-[300px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
-                    Tidak ada data siswa.
-                  </td>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    NIS
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Nama
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Kelas
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Jenis Kelamin
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tanggal Lahir
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Nama Orang Tua
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Aksi
+                  </th>
                 </tr>
-              ) : (
-                filteredStudents.map((student) => (
-                  <tr key={student.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {student.nis}
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredStudents.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
+                      Tidak ada data siswa.
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {student.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {student.class}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {student.gender === 'L' ? 'Laki-laki' : 'Perempuan'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(student.birth_date).toLocaleDateString('id-ID')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {student.parent_name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-2">
-                        {hasPermission('manage_students') && (
-                          <>
-                            <button
-                              onClick={() => handleEdit(student)}
-                              className="text-primary-600 hover:text-primary-900"
-                            >
-                              <Edit className="h-5 w-5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteClick(student.id)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              <Trash2 className="h-5 w-5" />
-                            </button>
-                          </>
-                        )}
-                        {hasPermission('generate_qr') && (
+                  </tr>
+                ) : (
+                  filteredStudents.map((student) => (
+                    <tr key={student.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {student.nis}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {student.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {student.class}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {student.gender === 'L' ? 'Laki-laki' : 'Perempuan'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(student.birth_date).toLocaleDateString('id-ID')}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {student.parent_name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end space-x-2">
+                          <button
+                            onClick={() => handleEdit(student)}
+                            className="text-primary-600 hover:text-primary-900"
+                          >
+                            <Edit className="h-5 w-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteConfirmation(student.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </button>
                           <button
                             onClick={() => setShowQR(student.id)}
                             className="text-gray-600 hover:text-gray-900"
                           >
                             <QrCode className="h-5 w-5" />
                           </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Add/Edit Student Form Modal */}
       {showForm && (
@@ -404,9 +514,11 @@ const StudentsPage: React.FC = () => { // Menggunakan React.FC untuk tipe yang l
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                   >
                     <option value="">Pilih Kelas</option>
-                    {classList.map((className) => (
-                      <option key={className} value={className}>
-                        {className}
+                    {/* Ini Wajib Kamu Ingat! (Menggunakan Daftar Kelas Dinamis) */}
+                    {/* Mengganti hardcoded classList dengan classes yang diambil dari backend */}
+                    {classes.map((classItem) => ( // Gunakan `classes` state
+                      <option key={classItem.id} value={classItem.name}> {/* value adalah class.name */}
+                        {classItem.name}
                       </option>
                     ))}
                   </select>
@@ -482,9 +594,10 @@ const StudentsPage: React.FC = () => { // Menggunakan React.FC untuk tipe yang l
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
+                  disabled={isLoading}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:opacity-70"
                 >
-                  {selectedStudent ? 'Simpan Perubahan' : 'Tambah Siswa'}
+                  {isLoading ? 'Memproses...' : (selectedStudent ? 'Simpan Perubahan' : 'Tambah Siswa')}
                 </button>
               </div>
             </form>
@@ -535,24 +648,81 @@ const StudentsPage: React.FC = () => { // Menggunakan React.FC untuk tipe yang l
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-sm overflow-hidden animate-slide-up">
             <div className="p-5 border-b">
-              <h3 className="text-lg font-bold text-gray-900">Konfirmasi Hapus</h3>
+              <h3 className="text-lg font-bold text-gray-900">Konfirmasi Hapus Siswa</h3>
             </div>
             <div className="p-5">
-              <p className="text-gray-700">Apakah Anda yakin ingin menghapus data siswa ini?</p>
+              <p className="text-gray-700">Apakah Anda yakin ingin menghapus siswa ini? Aksi ini akan menghapus semua data terkait siswa ini (termasuk absensi).</p>
               <div className="mt-6 flex justify-end space-x-2">
                 <button
-                  onClick={cancelDelete}
+                  onClick={() => { setShowConfirmModal(false); setStudentToDeleteId(null); }}
                   className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
                 >
                   Batal
                 </button>
                 <button
-                  onClick={confirmDelete}
+                  onClick={handleDelete}
                   className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
                 >
                   Hapus
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Results Modal */}
+      {showImportResultsModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl overflow-hidden animate-slide-up">
+            <div className="flex justify-between items-center p-5 border-b">
+              <h2 className="text-xl font-bold text-gray-900">Hasil Impor Siswa</h2>
+              <button
+                onClick={() => setShowImportResultsModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-5 max-h-96 overflow-y-auto">
+              {importResults && importResults.length > 0 ? (
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIS</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pesan</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {importResults.map((result, index) => (
+                      <tr key={index} className={result.status === 'success' ? 'bg-green-50' : 'bg-red-50'}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{result.student?.nis || '-'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{result.student?.name || '-'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            result.status === 'success' ? 'bg-success-100 text-success-800' : 'bg-error-100 text-error-800'
+                          }`}>
+                            {result.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-normal text-sm text-gray-700">{result.message}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="text-center text-gray-500">Tidak ada hasil impor.</p>
+              )}
+            </div>
+            <div className="p-5 border-t flex justify-end">
+              <button
+                onClick={() => setShowImportResultsModal(false)}
+                className="btn-primary"
+              >
+                Tutup
+              </button>
             </div>
           </div>
         </div>

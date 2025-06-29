@@ -1,13 +1,32 @@
+// backend/routes/studentRoutes.js
 import express from 'express';
-import { getStudents, getStudentById, createStudent, updateStudent, deleteStudent } from '../controllers/studentController.js';
+import { 
+  getStudents, getStudentById, createStudent, updateStudent, deleteStudent,
+  bulkCreateStudents // Import fungsi bulkCreateStudents
+} from '../controllers/studentController.js';
+import authMiddleware, { authorizeRoles } from '../middleware/authMiddleware.js'; 
 
 const router = express.Router();
 
-router.get('/', getStudents); // GET /api/students -> Ambil semua siswa
-router.post('/', createStudent); // POST /api/students -> Tambah siswa baru
+// Ini Wajib Kamu Ingat! (Penerapan Middleware Otorisasi)
+// Semua route di bawah ini hanya bisa diakses oleh Admin.
 
-router.get('/:id', getStudentById); // GET /api/students/:id -> Ambil siswa berdasarkan ID
-router.put('/:id', updateStudent); // PUT /api/students/:id -> Update siswa berdasarkan ID
-router.delete('/:id', deleteStudent); // DELETE /api/students/:id -> Hapus siswa berdasarkan ID
+// Route untuk mendapatkan semua siswa
+router.get('/', getStudents); // Masih dilindungi di server.js
+
+// Route untuk menambah siswa baru (single)
+router.post('/', authorizeRoles('admin'), createStudent); // Hanya admin yang bisa menambah siswa
+
+// Route untuk impor siswa massal (Hanya Admin)
+router.post('/bulk-import', authorizeRoles('admin'), bulkCreateStudents); // Route baru untuk impor massal
+
+// Route untuk mendapatkan siswa berdasarkan ID
+router.get('/:id', getStudentById);
+
+// Route untuk mengupdate siswa
+router.put('/:id', authorizeRoles('admin'), updateStudent); // Hanya admin yang bisa update siswa
+
+// Route untuk menghapus siswa
+router.delete('/:id', authorizeRoles('admin'), deleteStudent); // Hanya admin yang bisa menghapus siswa
 
 export default router;
