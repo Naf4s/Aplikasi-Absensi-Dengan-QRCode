@@ -1,17 +1,21 @@
-import React, { useState, useEffect, useCallback } from 'react'; // Tambahkan useCallback
+import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar, Clock, Download, Filter, Search, Users, RefreshCw, X, AlertCircle } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react'; // Untuk tampilkan QR (jika ada fitur tampil QR di sini)
+import { QRCodeSVG } from 'qrcode.react'; 
 import { useAuth } from '../../contexts/AuthContext';
-import api from '../../lib/api'; // Import instance Axios kita
+import api from '../../lib/api';
+import axios from 'axios';
 
-// Ini Wajib Kamu Ingat! (Konsistensi Interface)
-// Pastikan interface ini sesuai dengan data yang dikembalikan oleh backend.
+// Ini Wajib Kamu Ingat! (Konsistensi Interface Kelas)
+// Interface ini harus sesuai dengan data kelas yang dikembalikan oleh backend.
 interface ClassItem {
-  id: string; // ID kelas, jika ada di DB
-  name: string; // Nama kelas (misal: '1A')
-  teacherName?: string; // Nama guru (opsional)
+  id: string;
+  name: string;
+  homeroom_teacher_id?: string | null;
+  homeroom_teacher_name?: string | null;
 }
 
+// Ini Wajib Kamu Ingat! (Konsistensi Interface StudentAttendanceStatus)
+// Pastikan interface ini sesuai dengan data yang dikembalikan oleh backend.
 interface StudentAttendanceStatus {
   id: string;
   nis: string;
@@ -35,18 +39,8 @@ const AttendancePage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Mock class list for demo (idealnya dari BE)
-  // Ini Wajib Kamu Ingat! (Data Awal untuk Kelas)
-  // Jika daftar kelas akan dinamis, kamu perlu API '/api/classes' dari backend.
-  // Untuk saat ini, kita pakai mock data ini dulu.
-  const classList: ClassItem[] = [
-    { id: '1A', name: '1A', teacherName: 'Sri Wahyuni, S.Pd.' },
-    { id: '1B', name: '1B', teacherName: 'Ahmad Prasetyo, S.Pd.' },
-    { id: '2A', name: '2A', teacherName: 'Rina Hastuti, S.Pd.' },
-    { id: '2B', name: '2B', teacherName: 'Doni Prasetya, S.Pd.' },
-    { id: '3A', name: '3A', teacherName: 'Fajar Wibowo, S.Pd.' },
-    { id: '3B', name: '3B', teacherName: 'Sari Indah, S.Pd.' },
-  ];
+  // Ini Wajib Kamu Ingat! (State Baru untuk Daftar Kelas Dinamis)
+  const [classes, setClasses] = useState<ClassItem[]>([]); // Untuk menyimpan daftar kelas dari backend
 
   // Fungsi untuk memuat status absensi siswa per kelas dan tanggal dari backend
   const loadStudentAttendance = useCallback(async (className: string, date: string) => {
@@ -60,12 +54,35 @@ const AttendancePage: React.FC = () => {
       setStudentsAttendance(response.data || []);
     } catch (err) {
       console.error('Error loading student attendance:', err);
-      setError('Gagal memuat status absensi siswa. Silakan coba lagi.');
+      let msg = 'Gagal memuat status absensi siswa. Silakan coba lagi.';
+      if (axios.isAxiosError(err) && err.response && err.response.data && err.response.data.message) {
+        msg = err.response.data.message;
+      }
+      setError(msg);
       setStudentsAttendance([]); // Clear students on error
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  // Fungsi untuk mengambil daftar kelas dari backend
+  const fetchClasses = useCallback(async () => {
+    try {
+      // Endpoint /api/classes dilindungi oleh authorizeRoles('admin') di backend.
+      // Jika guru juga bisa lihat daftar kelasnya, authorizeRoles di backend perlu disesuaikan.
+      // Untuk tampilan dropdown ini, semua user login bisa melihat daftar kelas.
+      const response = await api.get('/classes');
+      setClasses(response.data || []);
+    } catch (err) {
+      console.error('Error fetching classes:', err);
+      // Jangan set error global di sini agar tidak menimpa error absensi
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchClasses(); // Ambil daftar kelas saat komponen pertama kali di-mount
+  }, [fetchClasses]);
+
 
   // Effect untuk memuat absensi saat kelas atau tanggal berubah
   useEffect(() => {
@@ -189,18 +206,22 @@ const AttendancePage: React.FC = () => {
               <h2 className="text-lg font-medium text-gray-900">Daftar Kelas</h2>
             </div>
             <div className="divide-y divide-gray-200">
-              {classList.map((classItem) => (
-                <button
-                  key={classItem.id}
-                  className={`w-full text-left p-4 hover:bg-gray-50 transition ${
-                    selectedClass === classItem.id ? 'bg-primary-50' : ''
-                  }`}
-                  onClick={() => handleClassSelect(classItem.id)}
-                >
-                  <div className="font-medium text-gray-900">Kelas {classItem.name}</div>
-                  <div className="text-sm text-gray-500">{classItem.teacherName}</div>
-                </button>
-              ))}
+              {classes.length === 0 ? (
+                <div className="p-4 text-center text-gray-500 text-sm">Tidak ada kelas yang terdaftar.</div>
+              ) : (
+                classes.map((classItem) => ( // Menggunakan `classes` state
+                  <button
+                    key={classItem.id}
+                    className={`w-full text-left p-4 hover:bg-gray-50 transition ${
+                      selectedClass === classItem.name ? 'bg-primary-50' : '' // Bandingkan dengan class.name
+                    }`}
+                    onClick={() => handleClassSelect(classItem.name)} // Mengirim class.name sebagai ID yang dipilih
+                  >
+                    <div className="font-medium text-gray-900">Kelas {classItem.name}</div>
+                    <div className="text-sm text-gray-500">{classItem.homeroom_teacher_name || '-'}</div>
+                  </button>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -223,7 +244,7 @@ const AttendancePage: React.FC = () => {
             <div className="card overflow-hidden">
               <div className="p-4 bg-white border-b border-gray-200 flex justify-between items-center">
                 <h2 className="text-lg font-medium text-gray-900">
-                  Siswa Kelas {classList.find(c => c.id === selectedClass)?.name}
+                  Siswa Kelas {selectedClass}
                 </h2>
                 
                 <div className="flex items-center space-x-2">
@@ -266,7 +287,7 @@ const AttendancePage: React.FC = () => {
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         NIS
-                      </th> {/* Mengubah ID Siswa menjadi NIS */}
+                      </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Nama
                       </th>
@@ -385,7 +406,7 @@ const AttendancePage: React.FC = () => {
             <div className="card overflow-hidden">
               <div className="p-4 bg-white border-b border-gray-200">
                 <h2 className="text-lg font-medium text-gray-900">
-                  Mode QR Code - Kelas {classList.find(c => c.id === selectedClass)?.name}
+                  Mode QR Code - Kelas {selectedClass}
                 </h2>
                 <p className="text-sm text-gray-500 mt-1">
                   Fitur tampilan QR Code siswa sedang dalam pengembangan.

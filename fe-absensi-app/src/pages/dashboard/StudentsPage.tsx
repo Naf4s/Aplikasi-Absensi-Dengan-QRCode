@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'; // Tambah useRef
-import { Search, Plus, Edit, Trash2, QrCode, Download, X, AlertCircle, Upload } from 'lucide-react'; // Tambah Upload icon
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Search, Plus, Edit, Trash2, QrCode, Download, X, AlertCircle, Upload, Info } from 'lucide-react'; // Tambah Info icon
 import { QRCodeCanvas } from 'qrcode.react'; 
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
@@ -7,14 +7,13 @@ import axios from 'axios';
 import * as XLSX from 'xlsx'; // Import library XLSX
 
 // Ini Wajib Kamu Ingat! (Konsistensi Interface Student)
-// Pastikan interface ini sesuai dengan model siswa di backend.
 interface Student {
   id: string;
   nis: string;
   name: string;
   class: string;
   gender: 'L' | 'P';
-  birth_date: string; // Format YYYY-MM-DD
+  birth_date: string; // FormatYYYY-MM-DD
   address?: string;
   parent_name?: string;
   phone_number?: string;
@@ -57,10 +56,10 @@ const StudentsPage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null); // Ref untuk input file Excel
   const [importResults, setImportResults] = useState<any[] | null>(null); // Untuk hasil impor
   const [showImportResultsModal, setShowImportResultsModal] = useState(false); // Modal hasil impor
+  const [showGuidelinesModal, setShowGuidelinesModal] = useState(false); // State untuk modal ketentuan impor
 
-  // Ini Wajib Kamu Ingat! (State Baru untuk Daftar Kelas Dinamis)
-  const [classes, setClasses] = useState<ClassItem[]>([]); // Untuk menyimpan daftar kelas dari backend
-
+  // Ini Wajib Kamu Ingat! (State untuk Menyimpan Daftar Kelas dari Backend)
+  const [classes, setClasses] = useState<ClassItem[]>([]); 
 
   const loadStudents = useCallback(async () => {
     try {
@@ -84,22 +83,24 @@ const StudentsPage: React.FC = () => {
   // Ini Wajib Kamu Ingat! (Fungsi untuk Mengambil Daftar Kelas dari Backend)
   const fetchClasses = useCallback(async () => {
     try {
-      // Endpoint /api/classes dilindungi oleh authorizeRoles('admin')
+      // Endpoint /api/classes dilindungi oleh authorizeRoles('admin') di backend.
+      // Kita perlu token admin untuk akses ini.
       const response = await api.get('/classes');
       setClasses(response.data || []);
     } catch (err) {
       console.error('Error fetching classes:', err);
-      // Jangan set error di sini agar tidak menimpa error utama loading siswa
+      // Jangan set error global di sini agar tidak menimpa error utama loading siswa
     }
   }, []);
 
   useEffect(() => {
     loadStudents();
-    // Panggil fetchClasses saat komponen pertama kali di-mount atau saat currentUser berubah
-    if (currentUser?.role === 'admin') { // Hanya admin yang perlu daftar kelas lengkap untuk form ini
+    // Hanya admin yang perlu daftar kelas lengkap untuk form ini
+    // Ini Wajib Kamu Ingat! (Mengambil Daftar Kelas Hanya Jika Perlu dan Punya Akses)
+    if (currentUser?.role === 'admin') { 
       fetchClasses();
     }
-  }, [loadStudents, fetchClasses, currentUser]); // Tambah fetchClasses dan currentUser ke dependencies
+  }, [loadStudents, fetchClasses, currentUser]); 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -114,6 +115,16 @@ const StudentsPage: React.FC = () => {
     try {
       setError(null);
       setIsLoading(true);
+
+      // Ini Wajib Kamu Ingat! (Validasi Kelas di Frontend Sebelum Kirim)
+      // Pastikan kelas yang dipilih ada di daftar kelas yang valid.
+      const selectedClassName = formData.class;
+      if (!classes.some(c => c.name === selectedClassName)) {
+        setError('Nama kelas tidak valid atau tidak terdaftar di sistem.');
+        setIsLoading(false);
+        return;
+      }
+
       if (selectedStudent) {
         await api.put(`/students/${selectedStudent.id}`, formData);
         console.log('Siswa berhasil diperbarui:', formData);
@@ -262,6 +273,8 @@ const StudentsPage: React.FC = () => {
         }
 
         const studentsToImport = [];
+        const validClassNames = classes.map(c => c.name); // Ini Wajib Kamu Ingat! (Ambil Daftar Nama Kelas yang Valid)
+
         for (let i = 1; i < jsonStudents.length; i++) { // Mulai dari baris kedua (data)
             const row = jsonStudents[i];
             const student: any = {};
@@ -271,6 +284,9 @@ const StudentsPage: React.FC = () => {
                 continue;
             }
 
+            let rowStatus = 'success';
+            let rowMessage = 'Siap diimpor.';
+
             requiredHeaders.forEach(reqHeader => {
                 const colIndex = headers.indexOf(reqHeader);
                 if (colIndex !== -1 && row[colIndex] !== undefined) {
@@ -278,32 +294,57 @@ const StudentsPage: React.FC = () => {
                 }
             });
 
+            // Ini Wajib Kamu Ingat! (Validasi Kelas di Excel)
+            const classNameFromExcel = String(student.kelas || '').trim();
+            if (!validClassNames.includes(classNameFromExcel)) {
+                rowStatus = 'failed';
+                rowMessage = `Kelas "${classNameFromExcel}" tidak ditemukan di database.`;
+            }
+
             // Map ke format yang sesuai dengan backend
-            studentsToImport.push({
+            const studentMapped = {
                 nis: String(student.nis || '').trim(),
                 name: String(student.nama || '').trim(),
-                class: String(student.kelas || '').trim(), // Pastikan nama kelas dari Excel sesuai dengan nama kelas di DB
+                class: classNameFromExcel, 
                 gender: String(student.jeniskelamin || '').trim().toUpperCase() === 'P' ? 'P' : 'L', // Pastikan L/P
-                // Tanggal lahir dari Excel (seringkali berupa angka serial Excel date number)
-                // Jika dari Excel adalah number, XLSX.SSF.parse_date_code bisa membantu
                 birth_date: student.tanggallahir ? 
                     (typeof student.tanggallahir === 'number' 
                         ? XLSX.SSF.parse_date_code(student.tanggallahir).toISOString().split('T')[0] 
                         : new Date(student.tanggallahir).toISOString().split('T')[0]) 
-                    : '', // Format YYYY-MM-DD
+                    : '', // FormatYYYY-MM-DD
                 address: String(student.alamat || '').trim(),
                 parent_name: String(student.namaorangtua || '').trim(),
                 phone_number: String(student.nomortelepon || '').trim(),
+            };
+
+            studentsToImport.push({
+                student: studentMapped,
+                status: rowStatus,
+                message: rowMessage
             });
         }
 
-        if (studentsToImport.length === 0) {
+        const validStudentsForBackend = studentsToImport.filter(s => s.status === 'success').map(s => s.student);
+
+        if (validStudentsForBackend.length === 0 && studentsToImport.length > 0) {
+            setImportResults(studentsToImport);
+            setShowImportResultsModal(true);
+            throw new Error("Tidak ada siswa yang valid untuk diimpor ke database.");
+        } else if (studentsToImport.length === 0) {
             throw new Error("Tidak ada data siswa yang valid ditemukan setelah header.");
         }
 
-        // Kirim data ke backend untuk impor massal
-        const response = await api.post('/students/bulk-import', studentsToImport);
-        setImportResults(response.data.results);
+        // Kirim hanya siswa yang valid ke backend
+        const response = await api.post('/students/bulk-import', validStudentsForBackend);
+        
+        // Gabungkan hasil dari frontend validasi dengan hasil dari backend
+        const finalResults = studentsToImport.map(s => {
+            if (s.status === 'failed') return s; // Pertahankan kegagalan dari frontend
+            const backendResult = response.data.results.find((br: any) => br.student.nis === s.student.nis);
+            return backendResult || s; // Gunakan hasil backend jika ada, jika tidak, gunakan status awal
+        });
+
+        setImportResults(finalResults);
         setShowImportResultsModal(true);
         await loadStudents(); // Muat ulang daftar siswa setelah impor
         
@@ -321,7 +362,6 @@ const StudentsPage: React.FC = () => {
   };
 
   // Ini Wajib Kamu Ingat! (Otorisasi Frontend - Melindungi Halaman)
-  // Hanya admin yang bisa mengakses halaman ini.
   if (!hasPermission('manage_students') && currentUser?.role !== 'admin') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center text-gray-600">
@@ -337,6 +377,14 @@ const StudentsPage: React.FC = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Manajemen Siswa</h1>
         <div className="flex space-x-2">
+          {/* Ini Wajib Kamu Ingat! (Tombol untuk Membuka Modal Ketentuan Impor) */}
+          <button
+            onClick={() => setShowGuidelinesModal(true)}
+            className="btn-outline flex items-center text-gray-600 hover:text-gray-900"
+          >
+            <Info className="h-5 w-5 mr-1" />
+            Ketentuan Impor
+          </button>
           {/* Tombol Import Excel */}
           <button
             onClick={() => fileInputRef.current?.click()}
@@ -514,10 +562,8 @@ const StudentsPage: React.FC = () => {
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                   >
                     <option value="">Pilih Kelas</option>
-                    {/* Ini Wajib Kamu Ingat! (Menggunakan Daftar Kelas Dinamis) */}
-                    {/* Mengganti hardcoded classList dengan classes yang diambil dari backend */}
-                    {classes.map((classItem) => ( // Gunakan `classes` state
-                      <option key={classItem.id} value={classItem.name}> {/* value adalah class.name */}
+                    {classes.map((classItem) => ( 
+                      <option key={classItem.id} value={classItem.name}> 
                         {classItem.name}
                       </option>
                     ))}
@@ -722,6 +768,90 @@ const StudentsPage: React.FC = () => {
                 className="btn-primary"
               >
                 Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Guidelines Modal */}
+      {showGuidelinesModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl overflow-hidden animate-slide-up">
+            <div className="flex justify-between items-center p-5 border-b">
+              <h2 className="text-xl font-bold text-gray-900">Ketentuan Impor Data Siswa</h2>
+              <button
+                onClick={() => setShowGuidelinesModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-5 max-h-96 overflow-y-auto text-sm text-gray-700">
+              <p className="mb-4">Untuk mengimpor data siswa dari file Excel, ikuti ketentuan format tabel di bawah ini:</p>
+              
+              <table className="min-w-full divide-y divide-gray-200 mb-6 border border-gray-300">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r">Header (Wajib)</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deskripsi & Ketentuan</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  <tr>
+                    <td className="px-4 py-2 font-mono text-gray-900 border-r">NIS</td>
+                    <td className="px-4 py-2">Nomor Induk Siswa. **Wajib unik.** Jika ada duplikasi NIS, baris tersebut akan gagal diimpor.</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-2 font-mono text-gray-900 border-r">Nama</td>
+                    <td className="px-4 py-2">Nama lengkap siswa.</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-2 font-mono text-gray-900 border-r">Kelas</td>
+                    <td className="px-4 py-2">Nama kelas siswa. **Harus sama persis dengan nama kelas yang sudah terdaftar di halaman "Manajemen Kelas".** (Contoh: "1A", "2B"). Jika kelas tidak ditemukan, impor siswa akan gagal.</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-2 font-mono text-gray-900 border-r">JenisKelamin</td>
+                    <td className="px-4 py-2">Jenis kelamin siswa. **Hanya menerima "L" (Laki-laki) atau "P" (Perempuan).** Input akan otomatis dikonversi ke huruf kapital.</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-2 font-mono text-gray-900 border-r">TanggalLahir</td>
+                    <td className="px-4 py-2">Tanggal lahir siswa. Format yang disarankan:YYYY-MM-DD (misal: 2010-05-20) atau format tanggal Excel standar.</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-2 font-mono text-gray-900 border-r">Alamat</td>
+                    <td className="px-4 py-2">Alamat lengkap siswa (Opsional).</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-2 font-mono text-gray-900 border-r">NamaOrangTua</td>
+                    <td className="px-4 py-2">Nama orang tua/wali siswa (Opsional).</td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-2 font-mono text-gray-900 border-r">NomorTelepon</td>
+                    <td className="px-4 py-2">Nomor telepon orang tua/wali siswa (Opsional).</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <p className="font-semibold mb-2">Contoh Baris Header di Excel Anda:</p>
+              <div className="bg-gray-100 p-3 rounded-md overflow-x-auto mb-4">
+                <code className="text-xs break-all">NIS | Nama | Kelas | JenisKelamin | TanggalLahir | Alamat | NamaOrangTua | NomorTelepon</code>
+              </div>
+
+              <p className="font-semibold mb-2">Catatan Penting:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Pastikan baris pertama Excel adalah header kolom.</li>
+                <li>Urutan kolom tidak harus sama persis dengan contoh, asalkan nama headernya sesuai.</li>
+                <li>Baris kosong di Excel akan diabaikan.</li>
+                <li>Hasil impor (sukses/gagal per siswa) akan ditampilkan setelah proses selesai.</li>
+              </ul>
+            </div>
+            <div className="p-5 border-t flex justify-end">
+              <button
+                onClick={() => setShowGuidelinesModal(false)}
+                className="btn-primary"
+              >
+                Mengerti
               </button>
             </div>
           </div>
