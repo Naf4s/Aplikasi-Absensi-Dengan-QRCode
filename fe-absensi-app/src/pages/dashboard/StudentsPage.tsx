@@ -1,21 +1,21 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Plus, Edit, Trash2, QrCode, Download, X, AlertCircle, Upload, Info } from 'lucide-react';
-import { QRCodeCanvas } from 'qrcode.react'; 
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { Search, Plus, Upload, Info } from 'lucide-react'; 
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 
 // Ini Wajib Kamu Ingat! (Import Komponen yang Baru Dibuat)
+// Pastikan komponen-komponen ini sudah ada di folder src/components/common/ dan src/components/students/
 import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
 import StudentFormModal from '../../components/students/StudentFormModal';
 import ImportResultsModal from '../../components/students/ImportResultsModal';
 import ImportGuidelinesModal from '../../components/students/ImportGuidelinesModal';
-import StudentTable from '../../components/students/StudentTable'; // Tabel siswa utama
+import StudentTable from '../../components/students/StudentTable'; 
+import StudentQrModal from '../../components/students/StudentQrModal'; // Ini yang BARU diimpor!
 
 // Ini Wajib Kamu Ingat! (Konsistensi Interface Global)
 // Lebih baik definisikan interface ini di satu tempat (misal: src/types/models.ts)
-// Tapi untuk saat ini, kita bisa ulang atau buat file terpisah.
 interface Student {
   id: string;
   nis: string;
@@ -30,6 +30,7 @@ interface Student {
   updated_at?: string;
 }
 
+// Ini Wajib Kamu Ingat! (Interface untuk Kelas)
 interface ClassItem {
   id: string;
   name: string;
@@ -37,69 +38,76 @@ interface ClassItem {
   homeroom_teacher_name?: string | null;
 }
 
+// Interface untuk konfigurasi sorting
+interface SortConfig {
+  key: keyof Student | null; // Kunci kolom untuk sorting (misal: 'name', 'nis', 'class')
+  direction: 'ascending' | 'descending' | null; // Arah sorting
+}
+
 const StudentsPage: React.FC = () => {
   const { user: currentUser, hasPermission } = useAuth();
   
-  // --- START: Deklarasi Semua State di Bagian Paling Atas Komponen ---
+  // --- START: DEKLARASI SEMUA STATE DAN REF DI BAGIAN PALING ATAS KOMPONEN ---
   const [students, setStudents] = useState<Student[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [showQR, setShowQR] = useState<string | null>(null);
+  // Ini Wajib Kamu Ingat! (State baru untuk modal QR Code)
+  const [qrStudentData, setQrStudentData] = useState<Student | null>(null); 
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null); // Menggunakan pageError untuk error umum halaman
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [studentToDeleteId, setStudentToDeleteId] = useState<string | null>(null);
+  const [studentToDeleteId, setStudentToDeleteId] = useState<string | null>(null); 
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'name', direction: 'ascending' }); 
 
   const [formData, setFormData] = useState<Omit<Student, 'id' | 'created_at' | 'updated_at'>>({
     nis: '', name: '', class: '', gender: 'L', birth_date: '',
     address: '', parent_name: '', phone_number: ''
   });
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null); 
   const [importResults, setImportResults] = useState<any[] | null>(null);
   const [showImportResultsModal, setShowImportResultsModal] = useState(false);
   const [showGuidelinesModal, setShowGuidelinesModal] = useState(false);
 
   const [classes, setClasses] = useState<ClassItem[]>([]); 
-  // --- END: Deklarasi Semua State dan Ref ---
+  // --- END: DEKLARASI SEMUA STATE DAN REF ---
 
 
-  // --- START: Deklarasi Fungsi-fungsi dengan useCallback ---
+  // --- START: Deklarasi Fungsi-fungsi dengan useCallback / useMemo ---
   // Ini Wajib Kamu Ingat! (Fungsi dengan useCallback Dideklarasikan Setelah SEMUA State)
   // Ini memastikan semua dependensi (state, setter) sudah ada sebelum fungsi ini dibuat.
 
-  // PENTING: resetForm harus dideklarasikan di awal karena dipanggil oleh handleSubmit dan handleFormSubmit
-  const resetForm = useCallback(() => {
+  const resetForm = useCallback(() => { 
     setFormData({
       nis: '', name: '', class: '', gender: 'L', birth_date: '',
       address: '', parent_name: '', phone_number: ''
     });
     setSelectedStudent(null);
     setShowForm(false);
-    setError(null);
-  }, [setFormData, setSelectedStudent, setShowForm, setError]);
+    setPageError(null); 
+  }, [setFormData, setSelectedStudent, setShowForm, setPageError]);
 
-  const loadStudents = useCallback(async () => {
+  const loadStudents = useCallback(async () => { 
     try {
       setIsLoading(true);
-      setError(null);
+      setPageError(null); 
       const response = await api.get('/students');
       setStudents(response.data || []);
     } catch (err) {
       console.error('Error loading students:', err);
       let msg = 'Gagal memuat data siswa. Silakan coba lagi.';
-      if (axios.isAxiosError(err) && axios.isAxiosError(err) && err.response && err.response.data && err.response.data.message) {
+      if (axios.isAxiosError(err) && err.response && err.response.data && err.response.data.message) {
         msg = err.response.data.message;
       }
-      setError(msg);
+      setPageError(msg); 
       setStudents([]);
     } finally {
       setIsLoading(false);
     }
-  }, [setStudents, setIsLoading, setError]); 
+  }, [setStudents, setIsLoading, setPageError]); 
 
-  const fetchClasses = useCallback(async () => {
+  const fetchClasses = useCallback(async () => { 
     try {
       const response = await api.get('/classes');
       setClasses(response.data || []);
@@ -108,10 +116,10 @@ const StudentsPage: React.FC = () => {
     }
   }, [setClasses]); 
 
-  const handleDelete = useCallback(async () => { 
+  const handleDelete = async () => { 
     if (!studentToDeleteId) return;
 
-    setError(null);
+    setPageError(null); 
     setIsLoading(true);
 
     try {
@@ -123,28 +131,28 @@ const StudentsPage: React.FC = () => {
     } catch (err) {
       console.error('Error deleting student:', err);
       let msg = 'Terjadi kesalahan saat menghapus siswa.';
-      if (axios.isAxiosError(err) && axios.isAxiosError(err) && err.response && err.response.data && err.response.data.message) {
+      if (axios.isAxiosError(err) && err.response && err.response.data && err.response.data.message) {
         msg = err.response.data.message;
       }
-      setError(msg);
+      setPageError(msg); 
     } finally {
       setIsLoading(false);
     }
-  }, [studentToDeleteId, loadStudents, setShowConfirmModal, setStudentToDeleteId, setError, setIsLoading]); 
+  };
 
-  const handleDeleteConfirmation = useCallback((id: string) => {
+  const handleDeleteConfirmation = (id: string) => { 
     setStudentToDeleteId(id); 
     setShowConfirmModal(true);
-  }, [setStudentToDeleteId, setShowConfirmModal]); 
+  };
 
-  const handleFormSubmit = useCallback(async (data: Omit<Student, 'id' | 'created_at' | 'updated_at'>) => {
-    setError(null); // Clear form-specific error
+  const handleFormSubmit = useCallback(async (data: Omit<Student, 'id' | 'created_at' | 'updated_at'>) => { 
+    setPageError(null); 
     setIsLoading(true);
 
     try {
       const selectedClassName = data.class;
       if (!classes.some(c => c.name === selectedClassName)) {
-        setError('Nama kelas tidak valid atau tidak terdaftar di sistem.');
+        setPageError('Nama kelas tidak valid atau tidak terdaftar di sistem.'); 
         setIsLoading(false);
         return;
       }
@@ -162,16 +170,16 @@ const StudentsPage: React.FC = () => {
     } catch (err) {
       console.error('Error saving student:', err);
       let msg = 'Terjadi kesalahan saat menyimpan data siswa.';
-      if (axios.isAxiosError(err) && axios.isAxiosError(err) && err.response && err.response.data && err.response.data.message) {
+      if (axios.isAxiosError(err) && err.response && err.response.data && err.response.data.message) {
         msg = err.response.data.message;
       }
-      setError(msg); // Set form-specific error
+      setPageError(msg); 
     } finally {
       setIsLoading(false);
     }
-  }, [classes, selectedStudent, loadStudents, resetForm, setIsLoading, setError]); // Dependencies
+  }, [classes, selectedStudent, loadStudents, resetForm, setIsLoading, setPageError]); 
 
-  const handleEdit = useCallback((student: Student) => {
+  const handleEdit = useCallback((student: Student) => { 
     setSelectedStudent(student);
     setFormData({
       nis: student.nis, name: student.name, class: student.class, gender: student.gender, birth_date: student.birth_date,
@@ -180,12 +188,12 @@ const StudentsPage: React.FC = () => {
     setShowForm(true);
   }, [setSelectedStudent, setFormData, setShowForm]);
 
-  const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => { 
     const file = event.target.files?.[0];
     if (!file) return;
 
     setIsLoading(true);
-    setError(null);
+    setPageError(null); 
     setImportResults(null);
 
     const reader = new FileReader();
@@ -275,7 +283,7 @@ const StudentsPage: React.FC = () => {
             setShowImportResultsModal(true);
             throw new Error("Tidak ada siswa yang valid untuk diimpor ke database.");
         } else if (studentsToImport.length === 0) {
-            setImportResults(studentsToImport); // Tampilkan modal kosong/header saja
+            setImportResults(studentsToImport); 
             setShowImportResultsModal(true);
             throw new Error("Tidak ada data siswa yang valid ditemukan setelah header.");
         }
@@ -294,7 +302,7 @@ const StudentsPage: React.FC = () => {
         
       } catch (err: any) {
         console.error('Error processing file or importing students:', err);
-        setError(`Gagal mengimpor siswa: ${err.message || 'Terjadi kesalahan.'}`);
+        setPageError(`Gagal mengimpor siswa: ${err.message || 'Terjadi kesalahan.'}`); 
         setImportResults(null); 
         setShowImportResultsModal(false);
       } finally {
@@ -303,25 +311,51 @@ const StudentsPage: React.FC = () => {
       }
     };
     reader.readAsArrayBuffer(file);
-  }, [classes, loadStudents, setImportResults, setShowImportResultsModal, setError, setIsLoading]); 
-  // --- END: Deklarasi Fungsi-fungsi dengan useCallback ---
+  }, [classes, loadStudents, setImportResults, setShowImportResultsModal, setPageError, setIsLoading]); 
 
 
-  // useEffect untuk memuat data awal
-  useEffect(() => {
-    loadStudents();
-    if (currentUser?.role === 'admin') { 
-      fetchClasses();
+  const handleSort = useCallback((key: keyof Student) => {
+    let direction: SortConfig['direction'] = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    } else if (sortConfig.key === key && sortConfig.direction === 'descending') {
+      direction = null; 
+      key = null; 
     }
-  }, [loadStudents, fetchClasses, currentUser]); 
+    setSortConfig({ key, direction });
+  }, [sortConfig]);
 
-  // Filter siswa untuk tampilan tabel
-  const filteredStudents = students.filter(student =>
-    student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.nis.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
-  // Generate QR data
+  const sortedStudents = useMemo(() => { 
+    let sortableStudents = [...students]; 
+
+    sortableStudents = sortableStudents.filter(student =>
+      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.nis.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (sortConfig.key !== null && sortConfig.direction !== null) {
+      sortableStudents.sort((a, b) => {
+        const aValue = a[sortConfig.key!];
+        const bValue = b[sortConfig.key!];
+
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          const comparison = aValue.localeCompare(bValue);
+          return sortConfig.direction === 'ascending' ? comparison : -comparison;
+        } 
+        else if (aValue < bValue) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        } else if (aValue > bValue) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    return sortableStudents;
+  }, [students, searchTerm, sortConfig]); 
+
+
   const generateQRData = (student: Student) => {
     if (!student) return '';
     return JSON.stringify({
@@ -332,21 +366,48 @@ const StudentsPage: React.FC = () => {
     });
   };
 
-  // Download QR
-  const downloadQR = (studentId: string) => {
-    const canvas = document.getElementById(`qr-${studentId}`) as HTMLCanvasElement;
-    if (canvas) {
-      const pngUrl = canvas
-        .toDataURL("image/png")
-        .replace("image/png", "image/octet-stream");
-      const downloadLink = document.createElement("a");
-      downloadLink.href = pngUrl;
-      document.body.appendChild(downloadLink);
-      document.body.removeChild(downloadLink);
-    }
-  };
+  const downloadQR = useCallback((studentId: string) => { 
+    setTimeout(() => {
+      const canvas = document.getElementById(`qr-${studentId}`) as HTMLCanvasElement;
+      if (canvas) {
+        try {
+          console.log(`[DOWNLOAD QR] Canvas ditemukan untuk ID: ${studentId}`, canvas);
+          
+          if (canvas.width === 0 || canvas.height === 0) {
+              console.error(`[DOWNLOAD QR] Canvas ID ${studentId} memiliki dimensi nol. Tidak dapat mengunduh.`);
+              setPageError("Gagal mengunduh QR Code: Gambar tidak terbentuk sempurna. Coba lagi."); 
+              return;
+          }
 
-  // Otorisasi Frontend - Melindungi Halaman
+          const pngUrl = canvas.toDataURL("image/png"); 
+          const downloadLink = document.createElement("a");
+          downloadLink.href = pngUrl;
+          downloadLink.download = `qr-${studentId}.png`;
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+          console.log(`[DOWNLOAD QR] QR Code untuk ID ${studentId} berhasil dipicu unduhan.`);
+        } catch (error: any) {
+          console.error("[DOWNLOAD QR] Error generating QR code image or downloading:", error);
+          setPageError("Gagal mengunduh QR Code. Pastikan browser mengizinkan unduhan pop-up."); 
+        }
+      } else {
+        setPageError("Elemen QR Code tidak ditemukan untuk diunduh."); 
+        console.error(`[DOWNLOAD QR] Elemen canvas dengan ID qr-${studentId} tidak ditemukan.`);
+      }
+    }, 700); 
+  }, [setPageError]); 
+  // --- END: Deklarasi Semua Fungsi ---
+
+  // useEffect untuk memuat data awal
+  useEffect(() => {
+    loadStudents();
+    if (currentUser?.role === 'admin') { 
+      fetchClasses();
+    }
+  }, [loadStudents, fetchClasses, currentUser]); 
+
+  // --- START: Bagian JSX (Tampilan Komponen) ---
   if (!hasPermission('manage_students') && currentUser?.role !== 'admin') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center text-gray-600">
@@ -396,22 +457,29 @@ const StudentsPage: React.FC = () => {
         </div>
       </div>
 
-      {error && (
+      {pageError && ( 
         <div className="bg-error-50 text-error-700 p-4 rounded-lg flex items-start">
           <AlertCircle className="h-5 w-5 mr-2 mt-0.5" />
-          <span>{error}</span>
+          <span>{pageError}</span>
         </div>
       )}
 
       {/* Ini Wajib Kamu Ingat! (Penggunaan Komponen StudentTable) */}
       <StudentTable 
-        students={filteredStudents}
+        students={sortedStudents} 
         isLoading={isLoading}
-        error={error} // Passing error to StudentTable for display
+        error={pageError} 
         onEdit={handleEdit}
         onDeleteConfirmation={handleDeleteConfirmation}
-        onShowQR={id => setShowQR(id)} 
+        onShowQR={id => { 
+          const studentFound = students.find(s => s.id === id);
+          if (studentFound) {
+            setQrStudentData(studentFound); 
+          }
+        }} 
         searchTerm={searchTerm}
+        sortConfig={sortConfig} 
+        onSort={handleSort} 
       />
 
       {/* Ini Wajib Kamu Ingat! (Penggunaan Komponen StudentFormModal) */}
@@ -421,47 +489,17 @@ const StudentsPage: React.FC = () => {
         onSubmit={handleFormSubmit}
         initialData={selectedStudent}
         isLoading={isLoading} 
-        formError={error} 
+        formError={pageError} 
         classes={classes} 
       />
 
-      {/* QR Code Modal (tetap di sini karena menggunakan state showQR dari StudentsPage) */}
-      {showQR && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-sm overflow-hidden animate-slide-up">
-            <div className="flex justify-between items-center p-5 border-b">
-              <h2 className="text-xl font-bold text-gray-900">QR Code Siswa</h2>
-              <button
-                onClick={() => setShowQR(null)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <div className="p-5 flex flex-col items-center">
-              {showQR && (
-                <>
-                  <QRCodeCanvas
-                    id={`qr-${showQR}`}
-                    value={generateQRData(students.find(s => s.id === showQR)!)}
-                    size={512}
-                    level="H"
-                    includeMargin={true}
-                  />
-                  <button
-                    onClick={() => downloadQR(showQR)}
-                    className="mt-4 flex items-center px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
-                  >
-                    <Download className="h-5 w-5 mr-2" />
-                    Download QR Code
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Ini Wajib Kamu Ingat! (Penggunaan Komponen StudentQrModal) */}
+      <StudentQrModal
+        isOpen={!!qrStudentData} 
+        onClose={() => setQrStudentData(null)} 
+        student={qrStudentData} 
+        onError={setPageError} 
+      />
 
       {/* Ini Wajib Kamu Ingat! (Penggunaan Komponen ConfirmDeleteModal) */}
       <ConfirmDeleteModal

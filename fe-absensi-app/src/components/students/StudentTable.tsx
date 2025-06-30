@@ -1,10 +1,15 @@
 import React from 'react';
-import { Edit, Trash2, QrCode } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext'; // Import useAuth untuk permission
+import { Edit, Trash2, QrCode, ArrowUp, ArrowDown } from 'lucide-react'; // Import ArrowUp, ArrowDown
+import { useAuth } from '../../contexts/AuthContext'; 
 
-// Ini Wajib Kamu Ingat! (Props untuk StudentTable)
-// Komponen ini menerima daftar siswa, status loading, pesan error,
-// dan fungsi-fungsi handler untuk edit/hapus/QR.
+// Ini Wajib Kamu Ingat! (Interface untuk SortConfig)
+// Harus konsisten dengan yang didefinisikan di StudentsPage.tsx
+interface SortConfig {
+  key: keyof Student | null;
+  direction: 'ascending' | 'descending' | null;
+}
+
+// Ini Wajib Kamu Ingat! (Props untuk StudentTable - Tambah sortConfig dan onSort)
 interface StudentTableProps {
   students: Student[];
   isLoading: boolean;
@@ -12,7 +17,9 @@ interface StudentTableProps {
   onEdit: (student: Student) => void;
   onDeleteConfirmation: (id: string) => void;
   onShowQR: (id: string) => void;
-  searchTerm: string; // Untuk menampilkan pesan "Tidak ada data siswa untuk filter ini"
+  searchTerm: string; 
+  sortConfig: SortConfig; // Terima sortConfig dari parent
+  onSort: (key: keyof Student) => void; // Terima fungsi onSort dari parent
 }
 
 // Interface Student (diulang di sini atau bisa di file types global)
@@ -31,9 +38,24 @@ interface Student {
 }
 
 const StudentTable: React.FC<StudentTableProps> = ({ 
-  students, isLoading, error, onEdit, onDeleteConfirmation, onShowQR, searchTerm 
+  students, isLoading, error, onEdit, onDeleteConfirmation, onShowQR, searchTerm, sortConfig, onSort
 }) => {
   const { hasPermission } = useAuth(); // Dapatkan hasPermission
+
+  // Ini Wajib Kamu Ingat! (Fungsi untuk Menampilkan Indikator Sorting)
+  // Menampilkan ikon panah berdasarkan sortConfig saat ini.
+  const getSortIcon = (key: keyof Student) => {
+    if (sortConfig.key !== key) {
+      return null; // Tidak ada ikon jika tidak diurutkan berdasarkan kolom ini
+    }
+    if (sortConfig.direction === 'ascending') {
+      return <ArrowUp className="h-4 w-4 ml-1" />;
+    }
+    if (sortConfig.direction === 'descending') {
+      return <ArrowDown className="h-4 w-4 ml-1" />;
+    }
+    return null;
+  };
 
   if (isLoading) {
     return (
@@ -58,23 +80,54 @@ const StudentTable: React.FC<StudentTableProps> = ({
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                NIS
+              {/* Header Kolom yang Bisa Disorting */}
+              <th scope="col" 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => onSort('nis')} // Panggil onSort saat diklik
+              >
+                <div className="flex items-center">
+                  NIS {getSortIcon('nis')}
+                </div>
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Nama
+              <th scope="col" 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => onSort('name')}
+              >
+                <div className="flex items-center">
+                  Nama {getSortIcon('name')}
+                </div>
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Kelas
+              <th scope="col" 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => onSort('class')}
+              >
+                <div className="flex items-center">
+                  Kelas {getSortIcon('class')}
+                </div>
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Jenis Kelamin
+              <th scope="col" 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => onSort('gender')}
+              >
+                <div className="flex items-center">
+                  Jenis Kelamin {getSortIcon('gender')}
+                </div>
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Tanggal Lahir
+              <th scope="col" 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => onSort('birth_date')}
+              >
+                <div className="flex items-center">
+                  Tanggal Lahir {getSortIcon('birth_date')}
+                </div>
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Nama Orang Tua
+              <th scope="col" 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => onSort('parent_name')}
+              >
+                <div className="flex items-center">
+                  Nama Orang Tua {getSortIcon('parent_name')}
+                </div>
               </th>
               <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Aksi
