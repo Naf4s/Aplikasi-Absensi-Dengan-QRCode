@@ -6,6 +6,9 @@ import { v4 as uuidv4 } from 'uuid';
 // Setiap operasi database (get, run, all) adalah asynchronous karena melibatkan I/O.
 // Pastikan selalu menggunakan 'await' dan berada dalam fungsi 'async'.
 
+import { sendWA } from '../service/waService.js'; // pastikan kamu punya fungsi ini
+import { getStudentById } from './studentModel.js'; // ambil data siswa (nama & no_hp_ortu)
+
 export const recordAttendance = async (studentId, date, status, timeIn = null, notes = null, markedByUserId = null) => {
   const db = getDb();
   const id = uuidv4();
@@ -23,15 +26,41 @@ export const recordAttendance = async (studentId, date, status, timeIn = null, n
        WHERE id = ?`,
       status, timeIn, notes, markedByUserId, currentTime, existingRecord.id
     );
-    return { ...existingRecord, status, timeIn, notes, markedByUserId };
   } else {
     await db.run(
       'INSERT INTO attendance_records (id, student_id, date, time_in, status, notes, marked_by_user_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
       id, studentId, date, timeIn, status, notes, markedByUserId
     );
-    return { id, student_id: studentId, date, time_in: timeIn, status, notes, marked_by_user_id: markedByUserId };
   }
+
+  // ⏰ Tambahan: Kirim notifikasi jika alpha >= 3
+  if (status === 'absent') {
+    const [year, month] = date.split('-'); // contoh: '2025-07-09' → ['2025', '07']
+    const bulan = `${year}-${month}`;
+
+    const alphaCountRow = await db.get(`
+      SELECT COUNT(*) as total FROM attendance_records
+      WHERE student_id = ? AND status = 'absent' AND date LIKE ?
+    `, [studentId, `${bulan}%`]);
+
+    
+    const totalAlpha = alphaCountRow?.total || 0;
+    console.log(`📌 Total alpha siswa ${studentId} bulan ${bulan}: ${totalAlpha}`);
+
+    if (totalAlpha >= 1) {
+      const siswa = await getStudentById(studentId); // pastikan return { nama, no_hp_ortu }
+       console.log('📌 Data siswa:', siswa);
+
+      if (siswa?.phone_number) {
+        const pesan = `⚠️ Notifikasi: ${siswa.name} sudah alpha ${totalAlpha} kali di bulan ${month}/${year}. Mohon perhatian dari orang tua.`;
+        await sendWA(siswa.phone_number, pesan);
+      }
+    }
+  }
+
+  return { id: existingRecord?.id || id, student_id: studentId, date, time_in: timeIn, status, notes, marked_by_user_id: markedByUserId };
 };
+
 
 /**
  * Mengambil catatan absensi dengan filter.

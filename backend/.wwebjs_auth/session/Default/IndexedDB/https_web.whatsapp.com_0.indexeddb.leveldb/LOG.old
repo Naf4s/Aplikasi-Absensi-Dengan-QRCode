@@ -1,0 +1,8 @@
+2025/07/09-18:53:56.685 2178 Creating DB D:\Dev\web\pppl\Aplikasi-Absensi-Dengan-QRCode\backend\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb since it was missing.
+2025/07/09-18:53:56.969 2178 Reusing MANIFEST D:\Dev\web\pppl\Aplikasi-Absensi-Dengan-QRCode\backend\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2025/07/09-18:53:56.971 2178 Recovering log #207
+2025/07/09-18:53:56.976 2178 Reusing old log D:\Dev\web\pppl\Aplikasi-Absensi-Dengan-QRCode\backend\.wwebjs_auth\session\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000207.log 
+2025/07/09-18:53:56.977 2178 Delete type=2 #100
+2025/07/09-18:53:56.977 2178 Delete type=2 #206
+2025/07/09-18:53:56.977 2178 Delete type=2 #208
+2025/07/09-18:53:56.978 2178 Delete type=2 #209
