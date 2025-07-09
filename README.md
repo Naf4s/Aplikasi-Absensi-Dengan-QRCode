@@ -1,1 +1,0 @@
-# Aplikasi-Absensi-Dengan-QRCode
