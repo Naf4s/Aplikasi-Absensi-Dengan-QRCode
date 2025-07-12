@@ -1,8 +1,14 @@
+# Folder yang tidak perlu ikut Git
 node_modules/
-.env
-absensi.db
-*.log
-.wwebjs_auth
-.wwebjs_cache
 .local-chromium/
 puppeteer-core/
+.wwebjs_auth/
+.wwebjs_cache/
+
+# File konfigurasi sensitif & log
+.env
+*.log
+absensi.db
+
+# Lainnya (opsional)
+*.sqlite
