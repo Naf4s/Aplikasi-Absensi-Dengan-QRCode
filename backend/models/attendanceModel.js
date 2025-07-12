@@ -23,7 +23,7 @@ export const recordAttendance = async (studentId, date, status, timeIn = null, n
     await db.run(
       `UPDATE attendance_records SET 
         status = ?, time_in = ?, notes = ?, marked_by_user_id = ?, created_at = ?
-       WHERE id = ?`,
+      WHERE id = ?`,
       status, timeIn, notes, markedByUserId, currentTime, existingRecord.id
     );
   } else {
@@ -47,12 +47,12 @@ export const recordAttendance = async (studentId, date, status, timeIn = null, n
     const totalAlpha = alphaCountRow?.total || 0;
     console.log(`📌 Total alpha siswa ${studentId} bulan ${bulan}: ${totalAlpha}`);
 
-    if (totalAlpha >= 1) {
+    if (totalAlpha >= 3) {
       const siswa = await getStudentById(studentId); // pastikan return { nama, no_hp_ortu }
-       console.log('📌 Data siswa:', siswa);
+      console.log('📌 Data siswa:', siswa);
 
-      if (siswa?.phone_number) {
-        const pesan = `⚠️ Notifikasi: ${siswa.name} sudah alpha ${totalAlpha} kali di bulan ${month}/${year}. Mohon perhatian dari orang tua.`;
+    if (siswa?.phone_number) {
+      const pesan = `📢 *Pemberitahuan Absensi Siswa*\n\nNama: *${siswa.name}*\nKelas: *${siswa.class}*\n\nKami informasikan bahwa *${siswa.name}* telah tercatat *alpa sebanyak ${totalAlpha} kali* pada bulan *${month}/${year}*.\n\nMohon perhatian dan pendampingan dari Bapak/Ibu agar kehadiran dan disiplin *${siswa.name}* dapat ditingkatkan.\n\nTerima kasih atas kerja samanya.🙏`;
         await sendWA(siswa.phone_number, pesan);
       }
     }
