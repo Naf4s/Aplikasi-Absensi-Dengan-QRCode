@@ -109,8 +109,21 @@ Backend menyediakan berbagai endpoint API di bawah prefix `/api`, seperti:
 ## 📄 Lisensi
 
 Proyek ini menggunakan lisensi ISC.
+Silakan digunakan dan dikembangkan untuk pembelajaran, penelitian, atau produksi. 🚀
 
 ---
 
-Terima kasih telah menggunakan **Aplikasi Absensi Dengan QR Code**! 🙏  
-Semoga aplikasi ini membantu mempermudah proses absensi Anda. 🚀
+## 🤝 Kontribusi
+Kami terbuka untuk kolaborasi!
+Silakan buat Pull Request atau Issue jika menemukan bug, fitur baru, atau ingin ikut mengembangkan proyek ini.
+
+---
+
+## 🙏 Terima Kasih
+Terima kasih telah menggunakan **Aplikasi Absensi dengan QR Code.**
+Aplikasi ini dikembangkan dengan semangat kolaborasi dan kemajuan teknologi pendidikan.
+Semoga dapat menjadi solusi praktis dalam menciptakan sistem absensi yang rapi, transparan, dan mudah digunakan.❤️
+
+Semoga bermanfaat dalam mendigitalisasi proses kehadiran di sekolah, kantor, atau instansi Anda! 🚀
+
+---
