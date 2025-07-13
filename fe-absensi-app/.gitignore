@@ -33,3 +33,7 @@ build/
 
 # OS generated
 Thumbs.db
+
+# Ignore .wwebjs_auth and .wwebjs_cache directories or files
+.wwebjs_auth
+.wwebjs_cache
