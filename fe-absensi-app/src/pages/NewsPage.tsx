@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import React, { useEffect, useState } from 'react';
 import api from '../lib/api';
 
@@ -66,7 +65,9 @@ const NewsPage: React.FC = () => {
       {loading ? (
         <p className="text-center text-gray-600 text-lg">Loading news...</p>
       ) : error ? (
-        <p className="text-center text-red-600 font-semibold">{error}</p>
+        newsList.length === 0 ? null : <p className="text-center text-red-600 font-semibold">{error}</p>
+      ) : newsList.length === 0 ? (
+        <p className="text-center text-gray-600 text-lg">Tidak ada berita tersedia.</p>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -107,7 +108,6 @@ const NewsPage: React.FC = () => {
                   className="absolute top-3 right-3 text-gray-600 hover:text-gray-900 text-2xl font-bold"
                   aria-label="Close"
                 >
-                  {/* Removed the × character as requested */}
                 </button>
                 {selectedNews.imageUrl && (
                   <img
@@ -124,43 +124,8 @@ const NewsPage: React.FC = () => {
           )}
         </>
       )}
-=======
-import React from 'react';
-
-const NewsPage: React.FC = () => {
-  return (
-    <div className="container mx-auto px-4 pt-20 pb-20">
-      <h1 className="text-3xl font-bold text-center mb-8">Berita Sekolah</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {/* News items would typically come from an API or database */}
-        {[1, 2, 3, 4, 5, 6].map((item) => (
-          <div key={item} className="bg-white rounded-lg shadow-md overflow-hidden">
-            <img 
-              src={`https://images.pexels.com/photos/3769138/pexels-photo-3769138.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1`} 
-              alt="News" 
-              className="w-full h-48 object-cover"
-            />
-            <div className="p-6">
-              <p className="text-gray-500 text-sm mb-2">March {item + 10}, 2023</p>
-              <h2 className="text-xl font-semibold mb-2">School Announcement {item}</h2>
-              <p className="text-gray-600 mb-4">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-              </p>
-              <button className="text-blue-600 font-medium hover:text-blue-800 transition-colors">
-                Read More
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
->>>>>>> 076422649722e74d5fef7da17c3b2f2290cebdd4
     </div>
   );
 };
 
-<<<<<<< HEAD
 export default NewsPage;
-=======
-export default NewsPage;
->>>>>>> 076422649722e74d5fef7da17c3b2f2290cebdd4

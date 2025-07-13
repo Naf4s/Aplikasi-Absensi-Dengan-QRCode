@@ -24,11 +24,7 @@ import UsersPage from './pages/dashboard/UsersPage';
 import AcademicYearSettingsPage from './pages/dashboard/AcademicYearSettingsPage';
 import ClassesPage from './pages/dashboard/ClassesPage'; // Import ClassesPage yang baru
 import PromotionSettingsPage from './pages/dashboard/PromotionSettingsPage'; // Import PromotionSettingsPage
-<<<<<<< HEAD
 import NewsManagementPage from './pages/dashboard/NewsManagementPage'; // Import NewsManagementPage
-=======
->>>>>>> 076422649722e74d5fef7da17c3b2f2290cebdd4
-
 
 // Komponen ini akan menangani redirect setelah login
 const AuthRedirect: React.FC = () => {
@@ -87,10 +83,7 @@ function App() {
             <Route path="settings/academic-year" element={<AcademicYearSettingsPage />} />
             <Route path="settings/promotion" element={<PromotionSettingsPage />} /> {/* Added promotion route */}
             <Route path="classes" element={<ClassesPage />} />{/* Route baru untuk Manajemen Kelas */}
-<<<<<<< HEAD
-            <Route path="news-management" element={<NewsManagementPage />} /> {/* Added news management route */}
-=======
->>>>>>> 076422649722e74d5fef7da17c3b2f2290cebdd4
+            <Route path="news-management" element={<NewsManagementPage />} /> {/* Added News Management route */}
           </Route>
         </Routes>
       </Router>
