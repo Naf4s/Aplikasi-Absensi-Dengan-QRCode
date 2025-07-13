@@ -4,6 +4,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
+import { jsPDF } from 'jspdf';
+// import QRCode from 'qrcode'; // Temporarily commented out due to missing types, will handle alternative
 
 // Ini Wajib Kamu Ingat! (Import Komponen yang Baru Dibuat)
 // Pastikan komponen-komponen ini sudah ada di folder src/components/common/ dan src/components/students/
@@ -366,37 +368,82 @@ const StudentsPage: React.FC = () => {
     });
   };
 
-  const downloadQR = useCallback((studentId: string) => { 
-    setTimeout(() => {
-      const canvas = document.getElementById(`qr-${studentId}`) as HTMLCanvasElement;
-      if (canvas) {
-        try {
-          console.log(`[DOWNLOAD QR] Canvas ditemukan untuk ID: ${studentId}`, canvas);
-          
-          if (canvas.width === 0 || canvas.height === 0) {
-              console.error(`[DOWNLOAD QR] Canvas ID ${studentId} memiliki dimensi nol. Tidak dapat mengunduh.`);
-              setPageError("Gagal mengunduh QR Code: Gambar tidak terbentuk sempurna. Coba lagi."); 
-              return;
-          }
+  const exportAllQRCodesToPDF = useCallback(async () => {
+    if (students.length === 0) {
+      setPageError("Tidak ada data siswa untuk diekspor.");
+      return;
+    }
+    setIsLoading(true);
+    setPageError(null);
+    try {
+      const pdf = new jsPDF({
+        unit: 'mm',
+        format: 'a4'
+      });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const qrSize = 40;
+      const textHeight = 10;
+      const itemsPerRow = 2;
+      const itemsPerPage = 8; // 2 columns x 4 rows
+      let x = margin;
+      let y = margin;
+      let itemCount = 0;
 
-          const pngUrl = canvas.toDataURL("image/png"); 
-          const downloadLink = document.createElement("a");
-          downloadLink.href = pngUrl;
-          downloadLink.download = `qr-${studentId}.png`;
-          document.body.appendChild(downloadLink);
-          downloadLink.click();
-          document.body.removeChild(downloadLink);
-          console.log(`[DOWNLOAD QR] QR Code untuk ID ${studentId} berhasil dipicu unduhan.`);
-        } catch (error: any) {
-          console.error("[DOWNLOAD QR] Error generating QR code image or downloading:", error);
-          setPageError("Gagal mengunduh QR Code. Pastikan browser mengizinkan unduhan pop-up."); 
+      // Alternative QR code generation using canvas element
+      const generateQRCodeDataUrl = (text: string): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const canvas = document.createElement('canvas');
+          import('qrcode').then(QRCodeLib => {
+            QRCodeLib.toCanvas(canvas, text, { margin: 1, width: 128 }, (error: any) => {
+              if (error) reject(error);
+              else resolve(canvas.toDataURL('image/png'));
+            });
+          }).catch(reject);
+        });
+      };
+
+      for (let i = 0; i < students.length; i++) {
+        const student = students[i];
+        const qrData = generateQRData(student);
+        const qrImageDataUrl = await generateQRCodeDataUrl(qrData);
+
+        // Add QR code image
+        pdf.addImage(qrImageDataUrl, 'PNG', x, y, qrSize, qrSize);
+
+        // Add student name and NIM below QR code, centered under QR code
+        pdf.setFontSize(10);
+        const centerX = x + qrSize / 2;
+        pdf.text(student.name, centerX, y + qrSize + 5, { maxWidth: qrSize, align: 'center' });
+        pdf.text(student.nis, centerX, y + qrSize + 12, { maxWidth: qrSize, align: 'center' });
+
+        itemCount++;
+        if (itemCount % itemsPerRow === 0) {
+          x = margin;
+          y += qrSize + textHeight + 15;
+        } else {
+          x += (pageWidth - 2 * margin) / itemsPerRow;
         }
-      } else {
-        setPageError("Elemen QR Code tidak ditemukan untuk diunduh."); 
-        console.error(`[DOWNLOAD QR] Elemen canvas dengan ID qr-${studentId} tidak ditemukan.`);
+
+        if (itemCount === itemsPerPage) {
+          if (i !== students.length - 1) {
+            pdf.addPage();
+            x = margin;
+            y = margin;
+            itemCount = 0;
+          }
+        }
       }
-    }, 700); 
-  }, [setPageError]); 
+
+      pdf.save('qr-codes-all-students.pdf');
+    } catch (error: any) {
+      console.error("Error exporting QR codes to PDF:", error);
+      setPageError("Gagal mengekspor QR Code ke PDF.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [students, setPageError, setIsLoading]);
   // --- END: Deklarasi Semua Fungsi ---
 
   // useEffect untuk memuat data awal
@@ -447,6 +494,14 @@ const StudentsPage: React.FC = () => {
             className="hidden"
           />
           {/* Tombol Tambah Siswa */}
+          <button
+            onClick={exportAllQRCodesToPDF}
+            className="btn-outline flex items-center ml-2"
+            disabled={isLoading || students.length === 0}
+            title="Export Semua QR Code ke PDF"
+          >
+            Export QR Codes
+          </button>
           <button
             onClick={() => setShowForm(true)}
             className="btn-primary flex items-center"

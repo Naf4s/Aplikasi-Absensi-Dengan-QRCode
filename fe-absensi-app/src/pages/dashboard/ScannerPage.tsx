@@ -74,10 +74,16 @@ const ScannerPage: React.FC = () => {
     } else if (error && error.includes("NotFoundError")) {
       setScanMessage("Tidak ada kamera ditemukan. Pastikan kamera terpasang dan berfungsi.");
       setMessageType('error');
-    } else if (error && !error.includes("No MultiFormat Readers")) { // Filter error yang terlalu umum
-       setScanMessage(`Terjadi masalah scanner: ${error}`);
-       setMessageType('error');
-    }
+    } else if (error &&
+      !error.includes("No MultiFormat Readers") &&
+      !error.includes("No barcode") &&
+      !error.includes("QR code parse error") &&
+      !error.includes("QR code decode error"))
+    {
+  setScanMessage(`Terjadi masalah scanner: ${error}`);
+  setMessageType('error');
+}
+
     setScanning(false); // Pastikan state scanning false jika gagal
     console.error('onScanFailure:', error); // Log error asli dari scanner
   };
@@ -200,8 +206,8 @@ const ScannerPage: React.FC = () => {
       'qr-reader',
       { 
         fps: 30,
-        qrbox: { width: 300, height: 300 },
-        aspectRatio: 1.0,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: window.innerWidth / window.innerHeight,
         disableFlip: false,
         rememberLastUsedCamera: true,
       },

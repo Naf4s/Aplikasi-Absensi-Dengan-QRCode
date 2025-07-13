@@ -40,9 +40,6 @@ const MainFooter: React.FC = () => {
                 <Link to="/programs" className="text-gray-400 hover:text-white transition">Program Sekolah</Link>
               </li>
               <li>
-                <Link to="/gallery" className="text-gray-400 hover:text-white transition">Galeri Kegiatan</Link>
-              </li>
-              <li>
                 <Link to="/news" className="text-gray-400 hover:text-white transition">Berita Terkini</Link>
               </li>
               <li>
@@ -68,7 +65,7 @@ const MainFooter: React.FC = () => {
               </div>
               <div className="flex items-center">
                 <Mail className="h-5 w-5 text-primary-400 flex-shrink-0" />
-                <p className="ml-2 text-gray-400">sdnegeribumirejo1@gmail.com</p>
+                <p className="ml-2 text-gray-400">sdn1.bumen@gmail.com</p>
               </div>
             </div>
           </div>

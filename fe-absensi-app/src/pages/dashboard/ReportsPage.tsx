@@ -329,20 +329,113 @@ const ReportsPage: React.FC = () => {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       const styles = `
-        body { font-family: Arial, sans-serif; padding: 20px; color: #1f2937; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
-        th, td { border: 1px solid #9ca3af; padding: 8px; text-align: left; }
-        th { background-color: #4f46e5; color: white; }
-        tbody tr:nth-child(even) { background-color: #f3f4f6; }
-        .header { text-align: center; margin-bottom: 20px; }
-        .summary-card { border: 1px solid #d1d5db; padding: 15px; margin-bottom: 15px; display: inline-block; width: 23%; box-sizing: border-box; vertical-align: top; background-color: #e0e7ff; border-radius: 6px; }
-        .chart-container { width: 48%; display: inline-block; vertical-align: top; margin: 1%; }
-        @media print {
-            .hidden-print { display: none !important; }
-            .chart-canvas { max-width: 100% !important; height: auto !important; }
-            .page-break { page-break-after: always; }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        padding: 30px 50px;
+        color: #111827;
+        font-size: 14px;
+        line-height: 1.6;
+        background-color: #fff;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+      .header h1 {
+        font-size: 24px;
+        color: #1e3a8a;
+        margin-bottom: 8px;
+      }
+      .header p {
+        font-size: 14px;
+        color: #6b7280;
+      }
+      .summary-container {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-bottom: 40px;
+      }
+      .summary-card {
+        flex: 1 1 22%;
+        background-color: #f3f4f6;
+        border-left: 5px solid #6366f1;
+        padding: 16px 20px;
+        border-radius: 6px;
+        text-align: center;
+        color: #1f2937;
+        font-weight: 600;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      }
+      .summary-card span {
+        display: block;
+        font-size: 18px;
+        color: #111827;
+        margin-top: 5px;
+        font-weight: bold;
+      }
+      .charts-section {
+        margin-bottom: 40px;
+      }
+      .charts-section h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e3a8a;
+        margin-bottom: 12px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+      }
+      th, td {
+        border: 1px solid #d1d5db;
+        padding: 10px 12px;
+        text-align: left;
+      }
+      td:nth-child(7) {
+        text-align: center;
+      }
+      th {
+        background-color: #1d4ed8 !important;
+        color: white !important;
+        font-weight: bold;
+        font-size: 14px;
+        text-align: center;
+        border: 1px solid #1e3a8a;
+
+      tbody tr:nth-child(even) {
+        background-color: #f9fafb;
+      }
+      .footer {
+        text-align: center;
+        margin-top: 40px;
+        font-size: 12px;
+        color: #6b7280;
+      }
+      @media print {
+        .hidden-print {
+          display: none !important;
         }
-      `;
+        .page-break {
+          page-break-after: always;
+        }
+        .summary-card {
+          font-size: 12px;
+          padding: 10px;
+        }
+        th, td {
+          font-size: 11px;
+        }
+        .header h1 {
+          font-size: 20px;
+        }
+      }
+    `;
 
       let tableHtml = `
         <table>
@@ -369,7 +462,23 @@ const ReportsPage: React.FC = () => {
                 <td>${record.class}</td>
                 <td>${record.status === 'present' ? 'Hadir' : record.status === 'absent' ? 'Tanpa Keterangan' : record.status === 'sick' ? 'Sakit' : 'Izin'}</td>
                 <td>${record.time_in || '-'}</td>
-                <td>${record.notes || '-'}</td>
+                <td>${
+                  (() => {
+                    if (record.status === 'present') {
+                      return record.time_in && record.time_in > '07:30:00'
+                        ? '⏰'
+                        : '✅';
+                    } else if (record.status === 'absent') {
+                      return '❌';
+                    } else if (record.status === 'sick') {
+                      return record.notes ? `🤒 Sakit - ${record.notes}` : '🤒';
+                    } else if (record.status === 'permit') {
+                      return record.notes ? `📄 Izin - ${record.notes}` : '📄';
+                    } else {
+                      return '-';
+                    }
+                  })()
+                }</td>
                 <td>${record.marked_by_user_name || '-'}</td>
               </tr>
             `).join('')}
@@ -380,12 +489,13 @@ const ReportsPage: React.FC = () => {
       let chartsHtml = '';
       // For print, we'll represent chart data as text description for simplicity.
       chartsHtml += `
-        <h3>Statistik Absensi (Grafik)</h3>
-        <p>Distribusi Status Absensi: Hadir (${totalPresentCount}), Tanpa Keterangan (${totalAbsentCount}), Sakit (${totalSickCount}), Izin (${totalPermitCount})</p>
-        <p>Tren Kehadiran per Minggu: (Lihat data tabel di bawah atau Unduh Excel untuk detail)</p>
-        ${user?.role === 'admin' ? `<p>Perbandingan Kehadiran Antar Kelas: (Lihat data tabel di bawah atau Unduh Excel untuk detail)</p>` : ''}
+        <div class="charts-section">
+          <h3>Statistik Absensi (Grafik)</h3>
+          <p>Distribusi Status Absensi: Hadir (${totalPresentCount}), Tanpa Keterangan (${totalAbsentCount}), Sakit (${totalSickCount}), Izin (${totalPermitCount})</p>
+          <p>Tren Kehadiran per Minggu: (Lihat data tabel di bawah atau Unduh Excel untuk detail)</p>
+          ${user?.role === 'admin' ? `<p>Perbandingan Kehadiran Antar Kelas: (Lihat data tabel di bawah atau Unduh Excel untuk detail)</p>` : ''}
+        </div>
       `;
-
 
       const reportContent = `
         <!DOCTYPE html>
@@ -401,8 +511,7 @@ const ReportsPage: React.FC = () => {
             <p>Periode: Bulan ${monthsData.find(m => m.value === filterMonthYear.substring(5, 7))?.name} ${filterMonthYear.substring(0, 4)} | Kelas: ${filterClass || 'Semua'}</p>
           </div>
 
-          <div style="margin-bottom: 20px;">
-              <h3 style="margin-bottom: 5px;">Ringkasan:</h3>
+          <div class="summary-container">
               <div class="summary-card">Total Siswa Terdata: <strong>${totalReportedStudents}</strong></div>
               <div class="summary-card">Rata-rata Kehadiran: <strong>${averagePresencePercentage}%</strong></div>
               <div class="summary-card">Total Ketidakhadiran: <strong>${absencePercentage}%</strong></div>
@@ -433,12 +542,12 @@ const ReportsPage: React.FC = () => {
 
     // --- Sheet: Ringkasan Statistik ---
     const summaryData = [
-      ['LAPORAN ABSENSI SISWA'],
-      ['SD N 1 Bumirejo'],
-      [],
-      [`Periode: Bulan ${monthsData.find(m => m.value === filterMonthYear.substring(5, 7))?.name} ${filterMonthYear.substring(0, 4)}`],
-      [`Kelas: ${filterClass || 'Semua'}`],
-      [],
+      ['LAPORAN ABSENSI SISWA', ''],
+      ['SD N 1 Bumirejo', ''],
+      ['', ''],
+      [`Periode: Bulan ${monthsData.find(m => m.value === filterMonthYear.substring(5, 7))?.name} ${filterMonthYear.substring(0, 4)}`, ''],
+      [`Kelas: ${filterClass || 'Semua'}`, ''],
+      ['', ''],
       ['Metrik', 'Nilai'],
       ['Total Siswa Terdata', totalReportedStudents],
       ['Rata-rata Kehadiran (%)', averagePresencePercentage],
@@ -449,6 +558,7 @@ const ReportsPage: React.FC = () => {
       ['Sakit', totalSickCount],
       ['Izin', totalPermitCount],
     ];
+    
     const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
 
     // --- Sheet: Data Siswa ---
@@ -468,13 +578,13 @@ const ReportsPage: React.FC = () => {
       if (!wsStudentData[cellAddress]) continue;
       wsStudentData[cellAddress].s = {
         font: { bold: true, color: { rgb: "FFFFFF" } },
-        fill: { fgColor: { rgb: "2563EB" } }, // Blue background
+        fill: { fgColor: { rgb: "1E40AF" } }, // Darker Blue background
         alignment: { horizontal: "center", vertical: "center" },
         border: {
-          top: { style: "thin", color: { rgb: "000000" } },
-          bottom: { style: "thin", color: { rgb: "000000" } },
-          left: { style: "thin", color: { rgb: "000000" } },
-          right: { style: "thin", color: { rgb: "000000" } }
+          top: { style: "thin", color: { rgb: "1F2937" } },
+          bottom: { style: "thin", color: { rgb: "1F2937" } },
+          left: { style: "thin", color: { rgb: "1F2937" } },
+          right: { style: "thin", color: { rgb: "1F2937" } }
         }
       };
     }
@@ -490,13 +600,13 @@ const ReportsPage: React.FC = () => {
       if (!wsSummary[cellAddress]) continue;
       wsSummary[cellAddress].s = {
         font: { bold: true, color: { rgb: "FFFFFF" } },
-        fill: { fgColor: { rgb: "4F46E5" } }, // Indigo background
+        fill: { fgColor: { rgb: "4338CA" } }, // Darker Indigo background
         alignment: { horizontal: "center", vertical: "center" },
         border: {
-          top: { style: "thin", color: { rgb: "000000" } },
-          bottom: { style: "thin", color: { rgb: "000000" } },
-          left: { style: "thin", color: { rgb: "000000" } },
-          right: { style: "thin", color: { rgb: "000000" } }
+          top: { style: "thin", color: { rgb: "1F2937" } },
+          bottom: { style: "thin", color: { rgb: "1F2937" } },
+          left: { style: "thin", color: { rgb: "1F2937" } },
+          right: { style: "thin", color: { rgb: "1F2937" } }
         }
       };
     }
@@ -520,14 +630,14 @@ const ReportsPage: React.FC = () => {
       (() => {
         if (record.status === 'present') {
           return record.time_in && record.time_in > '07:30:00'
-            ? '⏰ Terlambat'
-            : '✅ Hadir Tepat Waktu';
+            ? '⏰'
+            : '✅';
         } else if (record.status === 'absent') {
-          return '❌ Tanpa Keterangan';
+          return '❌';
         } else if (record.status === 'sick') {
-          return record.notes ? `🤒 Sakit - ${record.notes}` : '🤒 Sakit';
+          return record.notes ? `🤒 Sakit - ${record.notes}` : '🤒';
         } else if (record.status === 'permit') {
-          return record.notes ? `📄 Izin - ${record.notes}` : '📄 Izin';
+          return record.notes ? `📄 Izin - ${record.notes}` : '📄';
         } else {
           return '-';
         }
@@ -543,13 +653,13 @@ const ReportsPage: React.FC = () => {
       if (!wsDetail[cellAddress]) continue;
       wsDetail[cellAddress].s = {
         font: { bold: true, color: { rgb: "FFFFFF" } },
-        fill: { fgColor: { rgb: "2563EB" } }, // Blue background
+        fill: { fgColor: { rgb: "1E40AF" } }, // Darker Blue background
         alignment: { horizontal: "center", vertical: "center" },
         border: {
-          top: { style: "thin", color: { rgb: "000000" } },
-          bottom: { style: "thin", color: { rgb: "000000" } },
-          left: { style: "thin", color: { rgb: "000000" } },
-          right: { style: "thin", color: { rgb: "000000" } }
+          top: { style: "thin", color: { rgb: "1F2937" } },
+          bottom: { style: "thin", color: { rgb: "1F2937" } },
+          left: { style: "thin", color: { rgb: "1F2937" } },
+          right: { style: "thin", color: { rgb: "1F2937" } }
         }
       };
     }
@@ -559,9 +669,19 @@ const ReportsPage: React.FC = () => {
       { wch: 15 }, { wch: 25 }, { wch: 10 }, { wch: 12 }, { wch: 20 }
     ];
 
+    // Format NIS column as text to prevent Excel date formatting issues
+    for (let R = 1; R <= detailData.length; ++R) {
+      const cellAddress = XLSX.utils.encode_cell({ r: R, c: 1 }); // NIS column index 1
+      if (wsDetail[cellAddress]) {
+        wsDetail[cellAddress].t = 's'; // Set cell type to string
+        wsDetail[cellAddress].z = '@'; // Text format
+        wsDetail[cellAddress].v = wsDetail[cellAddress].v.toString();
+      }
+    }
+
     // Format date column as date type
     for (let R = 1; R <= detailData.length; ++R) {
-      const cellAddress = XLSX.utils.encode_cell({ r: R, c: 1 }); // Date column index 1
+      const cellAddress = XLSX.utils.encode_cell({ r: R, c: 0 }); // Date column index 0
       if (wsDetail[cellAddress]) {
         wsDetail[cellAddress].t = 'd';
         wsDetail[cellAddress].z = XLSX.SSF._table[14]; // Date format 'm/d/yy'
@@ -587,13 +707,13 @@ const ReportsPage: React.FC = () => {
       if (!wsStudentSummary[cellAddress]) continue;
       wsStudentSummary[cellAddress].s = {
         font: { bold: true, color: { rgb: "FFFFFF" } },
-        fill: { fgColor: { rgb: "059669" } }, // Emerald green background
+        fill: { fgColor: { rgb: "047857" } }, // Darker Emerald green background
         alignment: { horizontal: "center", vertical: "center" },
         border: {
-          top: { style: "thin", color: { rgb: "000000" } },
-          bottom: { style: "thin", color: { rgb: "000000" } },
-          left: { style: "thin", color: { rgb: "000000" } },
-          right: { style: "thin", color: { rgb: "000000" } }
+          top: { style: "thin", color: { rgb: "1F2937" } },
+          bottom: { style: "thin", color: { rgb: "1F2937" } },
+          left: { style: "thin", color: { rgb: "1F2937" } },
+          right: { style: "thin", color: { rgb: "1F2937" } }
         }
       };
     }
@@ -921,8 +1041,6 @@ const ReportsPage: React.FC = () => {
                             }
                           })()}
                         </td>
-
-
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {record.marked_by_user_name || '-'}
                         </td>

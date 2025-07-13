@@ -9,7 +9,6 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import ProgramsPage from './pages/ProgramsPage';
-import GalleryPage from './pages/GalleryPage';
 import NewsPage from './pages/NewsPage';
 import ContactPage from './pages/ContactPage';
 import LoginPage from './pages/LoginPage';
@@ -59,7 +58,6 @@ function App() {
             <Route index element={<HomePage />} />
             <Route path="about" element={<AboutPage />} />
             <Route path="programs" element={<ProgramsPage />} />
-            <Route path="gallery" element={<GalleryPage />} />
             <Route path="news" element={<NewsPage />} />
             <Route path="contact" element={<ContactPage />} />
           </Route>
