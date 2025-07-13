@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../lib/api';
 import { useForm } from 'react-hook-form';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface NewsItem {
   id: number;
@@ -18,13 +19,16 @@ interface NewsFormData {
 }
 
 const NewsManagementPage: React.FC = () => {
+  const { user } = useAuth();
   const [newsList, setNewsList] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingNews, setEditingNews] = useState<NewsItem | null>(null);
+  const [expandedNewsIds, setExpandedNewsIds] = useState<Set<number>>(new Set());
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<NewsFormData>();
+
 
   const fetchNews = async () => {
     try {
@@ -88,17 +92,31 @@ const NewsManagementPage: React.FC = () => {
     }
   };
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Manage News</h1>
+  const toggleExpanded = (id: number) => {
+    setExpandedNewsIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
 
-      <div className="flex justify-end mb-6">
-        <button
-          onClick={openCreateModal}
-          className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 transition"
-        >
-          Add News
-        </button>
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-900">Manage News</h1>
+
+        {user?.role === 'admin' && (
+          <button
+            onClick={openCreateModal}
+            className="btn-primary flex items-center"
+          >
+            Add News
+          </button>
+        )}
       </div>
 
       {loading ? (
@@ -106,37 +124,78 @@ const NewsManagementPage: React.FC = () => {
       ) : error ? (
         <p className="text-red-600">{error}</p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {newsList.map((news) => (
-            <div key={news.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-              {news.imageUrl && (
-                <img
-                  src={news.imageUrl}
-                  alt={news.title}
-                  className="w-full h-48 object-cover"
-                />
-              )}
-              <div className="p-6">
-                <p className="text-gray-500 text-sm mb-2">{new Date(news.date).toLocaleDateString()}</p>
-                <h2 className="text-xl font-semibold mb-2">{news.title}</h2>
-                <p className="text-gray-600 mb-4">{news.content}</p>
-                <div className="flex space-x-4">
-                  <button
-                    onClick={() => openEditModal(news)}
-                    className="text-blue-600 font-medium hover:text-blue-800 transition-colors"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => deleteNews(news.id)}
-                    className="text-red-600 font-medium hover:text-red-800 transition-colors"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="bg-white rounded-lg shadow overflow-hidden mt-10">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Content</th>
+                  {user?.role === 'admin' && (
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {newsList.map((news) => {
+                  const isExpanded = expandedNewsIds.has(news.id);
+                  const words = news.content.split(' ');
+                  const preview = words.slice(0, 8).join(' ');
+                  return (
+                    <tr key={news.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {news.imageUrl ? (
+                          <img
+                            src={news.imageUrl}
+                            alt={news.title}
+                            className="w-20 h-12 object-cover rounded"
+                          />
+                        ) : (
+                          <span className="text-gray-400">No Image</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {new Date(news.date).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {news.title}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {isExpanded ? news.content : preview + (words.length > 8 ? '...' : '')}
+                        {words.length > 8 && (
+                          <button
+                            onClick={() => toggleExpanded(news.id)}
+                            className="text-primary-600 ml-2 underline"
+                            type="button"
+                          >
+                            {isExpanded ? 'Read Less' : 'Read More'}
+                          </button>
+                        )}
+                      </td>
+                      {user?.role === 'admin' && (
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          <button
+                            onClick={() => openEditModal(news)}
+                            className="text-primary-600 hover:text-primary-900 transition-colors mr-4"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => deleteNews(news.id)}
+                            className="text-red-600 hover:text-red-900 transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
