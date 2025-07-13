@@ -15,7 +15,6 @@ const MainNavbar: React.FC<MainNavbarProps> = ({ isTransparent }) => {
     { name: 'Beranda', path: '/' },
     { name: 'Tentang', path: '/about' },
     { name: 'Program', path: '/programs' },
-    { name: 'Galeri', path: '/gallery' },
     { name: 'Berita', path: '/news' },
     { name: 'Kontak', path: '/contact' },
   ];
