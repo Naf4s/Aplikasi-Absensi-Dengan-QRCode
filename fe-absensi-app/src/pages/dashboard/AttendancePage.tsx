@@ -423,7 +423,11 @@ const AttendancePage: React.FC = () => {
                 <p className="text-sm text-gray-500 mt-1">
                   Fitur tampilan QR Code siswa sedang dalam pengembangan.
                 </p>
+<<<<<<< HEAD
                 {/* Ini Wajib Kamu Ingat! (Pesan Fitur Belum Aktif)
+=======
+                 {/* Ini Wajib Kamu Ingat! (Pesan Fitur Belum Aktif)
+>>>>>>> 076422649722e74d5fef7da17c3b2f2290cebdd4
                  Berikan feedback jelas jika fitur belum diimplementasikan. */}
                 <div className="mt-4 p-3 bg-gray-100 rounded-md text-sm text-gray-700 text-left">
                   <p className="font-semibold mb-1">Catatan:</p>

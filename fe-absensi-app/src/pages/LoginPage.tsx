@@ -133,6 +133,12 @@ const LoginPage: React.FC = () => {
               </button>
             </div>
           </form>
+<<<<<<< HEAD
+=======
+
+         
+          
+>>>>>>> 076422649722e74d5fef7da17c3b2f2290cebdd4
           <div className="mt-6 flex justify-center">
             <Link to="/" className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-800">
               <ArrowLeft className="mr-1 h-4 w-4" />

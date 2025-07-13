@@ -8,11 +8,17 @@ import attendanceRoutes from './routes/attendanceRoutes.js';
 import userRoutes from './routes/userRoutes.js'; 
 import classRoutes from './routes/classRoutes.js'; 
 import dashboardRoutes from './routes/dashboardRoutes.js';
+<<<<<<< HEAD
 import newsRoutes from './routes/newsRoutes.js';
 import authMiddleware from './middleware/authMiddleware.js';
 import settingsRoutes from './routes/settingsRoutes.js';
 
 
+=======
+import authMiddleware from './middleware/authMiddleware.js';
+import settingsRoutes from './routes/settingsRoutes.js';
+
+>>>>>>> 076422649722e74d5fef7da17c3b2f2290cebdd4
 dotenv.config();
 
 const app = express();
@@ -34,7 +40,10 @@ initializeDatabase().then(() => {
     app.use('/api/classes', authMiddleware, classRoutes);
     app.use('/api/dashboard', authMiddleware, dashboardRoutes); 
     app.use('/api/settings', authMiddleware, settingsRoutes);
+<<<<<<< HEAD
     app.use('/api/news', newsRoutes);
+=======
+>>>>>>> 076422649722e74d5fef7da17c3b2f2290cebdd4
     //Route Sederhana untuk Test
     app.get('/', (req, res) => {
         res.send('API Backend Absensi QR Code berjalan!');
