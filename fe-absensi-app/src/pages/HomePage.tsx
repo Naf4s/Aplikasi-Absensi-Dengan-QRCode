@@ -1,20 +1,55 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Award, BookOpen, QrCode, Users, Calendar, Clock } from 'lucide-react';
+import api from '../lib/api';
+
+interface NewsItem {
+  id: number;
+  title: string;
+  content: string;
+  date: string;
+  imageUrl?: string;
+}
+
+const ExpandableText: React.FC<{ content: string }> = ({ content }) => {
+  const words = content.split(' ');
+  const preview = words.slice(0, 15).join(' ');
+  return <p className="text-gray-600 mb-4">{preview + (words.length > 15 ? '...' : '')}</p>;
+};
 
 const HomePage: React.FC = () => {
+  const [newsList, setNewsList] = useState<NewsItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchNews = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/news');
+      setNewsList(response.data);
+      setLoading(false);
+    } catch (err) {
+      setError('Failed to fetch news');
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNews();
+  }, []);
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
       <section className="relative h-screen">
         <div className="absolute inset-0 bg-gradient-to-r from-primary-900/90 to-primary-800/80 z-10"></div>
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ 
-            backgroundImage: 'url(https://images.pexels.com/photos/8471835/pexels-photo-8471835.jpeg)' 
+          style={{
+            backgroundImage: 'url(https://images.pexels.com/photos/8471835/pexels-photo-8471835.jpeg)',
           }}
         ></div>
-        
+
         <div className="relative h-full flex items-center z-20">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl">
@@ -35,10 +70,10 @@ const HomePage: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="absolute bottom-10 left-0 right-0 z-20 text-center">
-          <a 
-            href="#features" 
+          <a
+            href="#features"
             className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/20 text-white hover:bg-white/30 transition"
           >
             <ChevronRight className="h-6 w-6 rotate-90" />
@@ -110,7 +145,7 @@ const HomePage: React.FC = () => {
                 <span className="text-primary-300">Siswa</span>
               </div>
             </div>
-            
+
             <div className="text-center">
               <div className="text-4xl font-bold mb-2">15+</div>
               <div className="flex justify-center">
@@ -118,7 +153,7 @@ const HomePage: React.FC = () => {
                 <span className="text-primary-300">Guru</span>
               </div>
             </div>
-            
+
             <div className="text-center">
               <div className="text-4xl font-bold mb-2">12+</div>
               <div className="flex justify-center">
@@ -126,7 +161,7 @@ const HomePage: React.FC = () => {
                 <span className="text-primary-300">Program</span>
               </div>
             </div>
-            
+
             <div className="text-center">
               <div className="text-4xl font-bold mb-2">25+</div>
               <div className="flex justify-center">
@@ -150,83 +185,38 @@ const HomePage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* News Item 1 */}
-            <div className="card overflow-hidden">
-              <img 
-                src="https://images.pexels.com/photos/8617769/pexels-photo-8617769.jpeg" 
-                alt="Kegiatan Literasi" 
-                className="w-full h-48 object-cover"
-              />
-              <div className="p-5">
-                <span className="inline-block px-3 py-1 bg-primary-100 text-primary-800 text-xs font-medium rounded-full mb-3">
-                  Kegiatan
-                </span>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Program Literasi Sekolah
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Peningkatan minat baca siswa melalui program 15 menit membaca sebelum kelas dimulai.
-                </p>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500">12 Juni 2025</span>
-                  <Link to="/news/1" className="text-primary-600 hover:text-primary-700 font-medium text-sm">
-                    Baca Selengkapnya
-                  </Link>
+            {loading ? (
+              <p className="text-center text-gray-600 text-lg col-span-full">Loading news...</p>
+            ) : error ? (
+              newsList.length === 0 ? null : <p className="text-center text-red-600 font-semibold col-span-full">{error}</p>
+            ) : newsList.length === 0 ? (
+              <p className="text-center text-gray-600 text-lg col-span-full">Tidak ada berita tersedia.</p>
+            ) : (
+              newsList.slice(0, 3).map((news) => (
+                <div key={news.id} className="card overflow-hidden">
+                  {news.imageUrl && (
+                    <img
+                      src={news.imageUrl}
+                      alt={news.title}
+                      className="w-full h-48 object-cover"
+                    />
+                  )}
+                  <div className="p-5">
+                    <span className="inline-block px-3 py-1 bg-primary-100 text-primary-800 text-xs font-medium rounded-full mb-3">
+                      Berita
+                    </span>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">{news.title}</h3>
+                    <ExpandableText content={news.content} />
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-500">{new Date(news.date).toLocaleDateString()}</span>
+                      <Link to={`/news/${news.id}`} className="text-primary-600 hover:text-primary-700 font-medium text-sm">
+                        Baca Selengkapnya
+                      </Link>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            {/* News Item 2 */}
-            <div className="card overflow-hidden">
-              <img 
-                src="https://images.pexels.com/photos/8617769/pexels-photo-8617769.jpeg" 
-                alt="Prestasi Sekolah" 
-                className="w-full h-48 object-cover"
-              />
-              <div className="p-5">
-                <span className="inline-block px-3 py-1 bg-secondary-100 text-secondary-800 text-xs font-medium rounded-full mb-3">
-                  Prestasi
-                </span>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Juara Olimpiade Matematika
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Siswa SD N 1 Bumirejo berhasil meraih juara 1 dalam Olimpiade Matematika tingkat kabupaten.
-                </p>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500">5 Juni 2025</span>
-                  <Link to="/news/2" className="text-primary-600 hover:text-primary-700 font-medium text-sm">
-                    Baca Selengkapnya
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* News Item 3 */}
-            <div className="card overflow-hidden">
-              <img 
-                src="https://images.pexels.com/photos/8617769/pexels-photo-8617769.jpeg" 
-                alt="Seminar Pendidikan" 
-                className="w-full h-48 object-cover"
-              />
-              <div className="p-5">
-                <span className="inline-block px-3 py-1 bg-accent-100 text-accent-800 text-xs font-medium rounded-full mb-3">
-                  Pengumuman
-                </span>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Sosialisasi Kurikulum Merdeka
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Kegiatan sosialisasi implementasi kurikulum merdeka kepada orang tua siswa SD N 1 Bumirejo.
-                </p>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-500">28 Mei 2025</span>
-                  <Link to="/news/3" className="text-primary-600 hover:text-primary-700 font-medium text-sm">
-                    Baca Selengkapnya
-                  </Link>
-                </div>
-              </div>
-            </div>
+              ))
+            )}
           </div>
         </div>
       </section>

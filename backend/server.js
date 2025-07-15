@@ -11,6 +11,7 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 import authMiddleware from "./middleware/authMiddleware.js";
 import settingsRoutes from "./routes/settingsRoutes.js";
 import { getQRStatus } from "./service/waService.js";
+import newsRoutes from './routes/newsRoutes.js';
 
 dotenv.config();
 
@@ -27,18 +28,13 @@ initializeDatabase()
     console.log("Database Berhasil Diinisialisasi, server siap.");
 
     // Gunakan Auth Routes
-    app.use("/api/auth", authRoutes); // All Route in authRoutes will be started by /api/auth
-    app.use("/api/students", authMiddleware, studentRoutes);
-    app.use("/api/attendance", authMiddleware, attendanceRoutes);
-    app.use("/api/users", authMiddleware, userRoutes);
-    app.use("/api/classes", authMiddleware, classRoutes);
-    app.use("/api/dashboard", authMiddleware, dashboardRoutes);
-    app.use("/api/settings", authMiddleware, settingsRoutes);
-
-    app.get("/api/wa-status", (req, res) => {
-      const status = getQRStatus();
-      res.json(status);
-    });
+    app.use('/api/auth', authRoutes); // All Route in authRoutes will be started by /api/auth
+    app.use('/api/students', authMiddleware, studentRoutes);
+    app.use('/api/attendance', authMiddleware, attendanceRoutes);
+    app.use('/api/users', authMiddleware, userRoutes);
+    app.use('/api/classes', authMiddleware, classRoutes);
+    app.use('/api/dashboard', authMiddleware, dashboardRoutes); 
+    app.use('/api/settings', authMiddleware, settingsRoutes);
     //Route Sederhana untuk Test
     app.get("/", (req, res) => {
       res.send("API Backend Absensi QR Code berjalan!");
@@ -48,8 +44,8 @@ initializeDatabase()
       console.log(`Server berjalan di port ${PORT}`);
       console.log(`Akses di: http://localhost:${PORT}`);
     });
-  })
-  .catch((error) => {
-    console.error("Gagal memulai server karena masalah database:", error);
-    process.exit(1); // exit if any database fatal problem
-  });
+}).catch(error => {
+    console.error('Gagal memulai server karena masalah database:', error);
+    process.exit(1); // exit if any database fatal problem 
+});
+

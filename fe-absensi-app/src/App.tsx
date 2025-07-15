@@ -9,7 +9,6 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import HomePage from './pages/HomePage';
 import AboutPage from './pages/AboutPage';
 import ProgramsPage from './pages/ProgramsPage';
-import GalleryPage from './pages/GalleryPage';
 import NewsPage from './pages/NewsPage';
 import ContactPage from './pages/ContactPage';
 import LoginPage from './pages/LoginPage';
@@ -26,7 +25,7 @@ import AcademicYearSettingsPage from './pages/dashboard/AcademicYearSettingsPage
 import ClassesPage from './pages/dashboard/ClassesPage'; // Import ClassesPage yang baru
 import PromotionSettingsPage from './pages/dashboard/PromotionSettingsPage'; // Import PromotionSettingsPage
 import AlphaPage from './pages/dashboard/alphapage';
-
+import NewsManagementPage from './pages/dashboard/NewsManagementPage'; // Import NewsManagementPage
 
 // Komponen ini akan menangani redirect setelah login
 const AuthRedirect: React.FC = () => {
@@ -60,7 +59,6 @@ function App() {
             <Route index element={<HomePage />} />
             <Route path="about" element={<AboutPage />} />
             <Route path="programs" element={<ProgramsPage />} />
-            <Route path="gallery" element={<GalleryPage />} />
             <Route path="news" element={<NewsPage />} />
             <Route path="contact" element={<ContactPage />} />
           </Route>
@@ -87,6 +85,7 @@ function App() {
             <Route path="settings/promotion" element={<PromotionSettingsPage />} /> {/* Added promotion route */}
             <Route path="classes" element={<ClassesPage />} />{/* Route baru untuk Manajemen Kelas */}
             <Route path="alpha" element={<AlphaPage />} />
+            <Route path="news-management" element={<NewsManagementPage />} /> {/* Added News Management route */}
           </Route>
         </Routes>
       </Router>

@@ -5,6 +5,9 @@ import {
   ClipboardList, BarChart2, Settings, LogOut, BookOpen, GraduationCap, CalendarCheck, FileText, 
   Send
 } from 'lucide-react'; // Import semua ikon yang dibutuhkan
+
+// Added NewsManagement icon import
+import { FileText as NewsIcon } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 // Ini Wajib Kamu Ingat! (Prop untuk Kontrol Responsivitas)
@@ -16,6 +19,8 @@ interface DashboardSidebarProps {
 
 const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isOpen, onClose }) => {
   const { user, logout, hasPermission } = useAuth(); // Dapatkan user, logout, dan hasPermission
+
+  console.log('DashboardSidebar user:', user);
 
   // Ini Wajib Kamu Ingat! (Daftar Link Navigasi Dinamis Berdasarkan Role/Permission)
   // Membangun daftar link navigasi yang akan ditampilkan di sidebar.
@@ -31,11 +36,22 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isOpen, onClose }) 
       { name: 'Kelas', path: '/dashboard/classes', icon: BookOpen, permission: 'manage_classes' },
       { name: 'kenaikan kelas', path: '/dashboard/settings/promotion', icon: GraduationCap, permission: 'manage_classes' },
       { name: 'Notifikasi Alpha', path: '/dashboard/alpha', icon: Send, permission: 'send_notification' },
-      { name: 'Pengaturan', path: '/dashboard/settings', icon: Settings, permission: 'manage_access' }
+      { name: 'News Management', path: '/dashboard/news-management', icon: NewsIcon, hideForRoles: ['teacher'] },
+      { name: 'Pengaturan', path: '/dashboard/settings', icon: Settings, permission: 'manage_access', end: true }
     ];
 
-    // Filter link berdasarkan permission user yang sedang login
-    return links.filter(link => !link.permission || hasPermission(link.permission));
+  // Filter link berdasarkan permission user yang sedang login dan role
+  const filteredLinks = links.filter(link => {
+    if (!user) return false; // If no user, hide all links
+    if (link.hideForRoles && user && link.hideForRoles.some(role => role.toLowerCase() === user.role.toLowerCase())) {
+      return false;
+    }
+    return !link.permission || hasPermission(link.permission);
+  });
+
+  console.log('DashboardSidebar filtered navLinks:', filteredLinks.map(l => l.name));
+
+  return filteredLinks;
   };
 
   const navLinks = getNavLinks();
@@ -54,13 +70,10 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isOpen, onClose }) 
 
       {/* Sidebar utama */}
       {/* Ini Wajib Kamu Ingat! (Kelas Responsif untuk Sidebar Itu Sendiri) */}
-      {/* - fixed top-0 left-0 h-full w-64 z-40: Perilaku default (mobile): sidebar full height, lebar 64, fixed. */}
-      {/* - transition-transform transform duration-300: Untuk animasi geser. */}
-      {/* - ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}: Kontrol geser masuk/keluar. */}
-      {/* - translate-x-0: terlihat. */}
-      {/* - -translate-x-full: tersembunyi ke kiri (mobile). */}
-      {/* - md:translate-x-0: selalu terlihat di layar menengah (md) ke atas. */}
-      {/* - md:sticky md:block: Di layar md ke atas, sidebar jadi sticky dan selalu block. */}
+      {/* - fixed top-0 left-0 h-full w-64 z-40 bg-white border-r border-gray-200  */}
+      {/* - transition-transform transform duration-300  */}
+      {/* - ${isOpen ? 'translate-x-0' : '-translate-x-full'}  */}
+      {/* - md:sticky md:top-0 md:translate-x-0 md:block md:flex-shrink-0 */}
       <div className={`
         fixed top-0 left-0 z-40 h-full w-64 bg-white border-r border-gray-200 
         transition-transform transform duration-300 
@@ -107,6 +120,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isOpen, onClose }) 
                 <NavLink
                   key={link.path}
                   to={link.path}
+                  end={link.end || false}
                   // Ini Wajib Kamu Ingat! (Menutup Sidebar Saat Navigasi di Mobile)
                   // Saat link diklik di mobile, sidebar harus ditutup.
                   onClick={() => {

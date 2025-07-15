@@ -75,9 +75,7 @@ const ContactPage: React.FC = () => {
                   <div className="ml-4">
                     <h3 className="text-lg font-medium text-gray-900 mb-1">Alamat</h3>
                     <p className="text-gray-600">
-                      Jl. Pendidikan No. 123, Bumirejo<br />
-                      Kecamatan Example, Kabupaten Example<br />
-                      Provinsi Example, 12345
+                      Jl. Dieng Km 4, Bumirejo, Kec. Mojotengah, Kab. Wonosobo Prov. Jawa Tengah, 56351
                     </p>
                   </div>
                 </div>
@@ -88,8 +86,8 @@ const ContactPage: React.FC = () => {
                   </div>
                   <div className="ml-4">
                     <h3 className="text-lg font-medium text-gray-900 mb-1">Telepon</h3>
-                    <p className="text-gray-600">(0123) 456789</p>
-                    <p className="text-gray-600">0812-3456-7890</p>
+                    <p className="text-gray-600">-</p>
+                    <p className="text-gray-600">-</p>
                   </div>
                 </div>
                 
@@ -99,8 +97,7 @@ const ContactPage: React.FC = () => {
                   </div>
                   <div className="ml-4">
                     <h3 className="text-lg font-medium text-gray-900 mb-1">Email</h3>
-                    <p className="text-gray-600">info@sdn1bumirejo.sch.id</p>
-                    <p className="text-gray-600">admin@sdn1bumirejo.sch.id</p>
+                    <p className="text-gray-600">sdn1.bumen@gmail.com</p>
                   </div>
                 </div>
                 
@@ -119,12 +116,18 @@ const ContactPage: React.FC = () => {
               
               <div className="h-64 md:h-80 lg:h-96 bg-gray-300 rounded-lg shadow-card overflow-hidden">
                 {/* Embed a map here - this is a placeholder */}
-                <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                  <div className="text-center">
-                    <MapPin className="h-10 w-10 text-gray-400 mx-auto mb-2" />
-                    <p className="text-gray-600">Peta Lokasi SD N 1 Bumirejo</p>
-                  </div>
+                <div className="h-96 bg-gray-300 rounded-lg overflow-hidden">
+                  <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3955.3758750471956!2d109.9152554!3d-7.317598!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e700b395b6fb641%3A0x4ebd8ebbdc48fd60!2sSDN%201%20Bumirejo!5e0!3m2!1sid!2sid!4v1720267500000!5m2!1sid!2sid"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen={true}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  ></iframe>
                 </div>
+
               </div>
             </div>
             

@@ -423,8 +423,6 @@ const AttendancePage: React.FC = () => {
                 <p className="text-sm text-gray-500 mt-1">
                   Fitur tampilan QR Code siswa sedang dalam pengembangan.
                 </p>
-                 {/* Ini Wajib Kamu Ingat! (Pesan Fitur Belum Aktif)
-                 Berikan feedback jelas jika fitur belum diimplementasikan. */}
                 <div className="mt-4 p-3 bg-gray-100 rounded-md text-sm text-gray-700 text-left">
                   <p className="font-semibold mb-1">Catatan:</p>
                   <p>Mode QR Code di halaman ini hanya tampilan placeholder. Fungsi scan QR sesungguhnya ada di halaman "Scanner QR".</p>

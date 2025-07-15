@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 // configuration URL base for backend
-// Replace 'localhost' with your backend server IP address accessible from your phone
-const API_BASE_URL = '/api'; // <-- Change this IP to your backend server IP
+
+const API_BASE_URL = 'http://localhost:8000/api'; // <-- Change this IP to your backend server IP
 
 const api = axios.create({
     baseURL: API_BASE_URL,

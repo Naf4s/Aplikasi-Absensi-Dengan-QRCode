@@ -18,113 +18,70 @@ const AboutPage: React.FC = () => {
 
       {/* Vision & Mission */}
       <section className="py-16 bg-white">
-        <div className="container-narrow">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            {/* Vision */}
-            <div>
-              <div className="flex items-center mb-4">
-                <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-                  <Target className="h-5 w-5 text-primary-700" />
-                </div>
-                <h2 className="ml-3 text-2xl font-bold text-gray-900">Visi</h2>
-              </div>
-              <p className="text-gray-700 leading-relaxed">
-                "Menjadi sekolah dasar unggulan yang menghasilkan lulusan berakhlak mulia, berprestasi akademik, dan memiliki keterampilan hidup untuk menghadapi tantangan masa depan."
-              </p>
-            </div>
-
-            {/* Mission */}
-            <div>
-              <div className="flex items-center mb-4">
-                <div className="h-10 w-10 rounded-full bg-secondary-100 flex items-center justify-center">
-                  <BookOpen className="h-5 w-5 text-secondary-700" />
-                </div>
-                <h2 className="ml-3 text-2xl font-bold text-gray-900">Misi</h2>
-              </div>
-              <ul className="space-y-2 text-gray-700">
-                <li className="flex items-start">
-                  <span className="h-5 w-5 text-secondary-600 mr-2">•</span>
-                  <span>Menyelenggarakan pendidikan dengan pendekatan yang berpusat pada siswa</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="h-5 w-5 text-secondary-600 mr-2">•</span>
-                  <span>Mengembangkan karakter dan nilai-nilai moral dalam setiap aspek pembelajaran</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="h-5 w-5 text-secondary-600 mr-2">•</span>
-                  <span>Menerapkan teknologi dalam proses belajar mengajar</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="h-5 w-5 text-secondary-600 mr-2">•</span>
-                  <span>Membangun kemitraan dengan orang tua dan komunitas</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="h-5 w-5 text-secondary-600 mr-2">•</span>
-                  <span>Menciptakan lingkungan belajar yang aman, nyaman, dan kondusif</span>
-                </li>
-              </ul>
-            </div>
+  <div className="container-narrow">
+    {/* Ganti 'items-center' menjadi 'items-start' di sini */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+      {/* Vision */}
+      <div>
+        <div className="flex items-center mb-4">
+          <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
+            <Target className="h-5 w-5 text-primary-700" />
           </div>
+          <h2 className="ml-3 text-2xl font-bold text-gray-900">Visi</h2>
         </div>
-      </section>
+        <p className="text-gray-700 leading-relaxed">
+          "Terwujudnya siswa berprestasi dan berbudi pekerti luhur berdasarkan iman dan taqwa, mandiri serta dapat menguasai imtaq dan iptek"
+        </p>
+      </div>
+
+      {/* Mission */}
+      <div>
+        <div className="flex items-center mb-4">
+          <div className="h-10 w-10 rounded-full bg-secondary-100 flex items-center justify-center">
+            <BookOpen className="h-5 w-5 text-secondary-700" />
+          </div>
+          <h2 className="ml-3 text-2xl font-bold text-gray-900">Misi</h2>
+        </div>
+        <ul className="space-y-2 text-gray-700">
+          <li className="flex items-start">
+            <span className="h-5 w-5 text-secondary-600 mr-2">•</span>
+            <span>Meningkatkan keimanan dan ketakwaan kepada Tuhan Yang Maha Esa</span>
+          </li>
+          <li className="flex items-start">
+            <span className="h-5 w-5 text-secondary-600 mr-2">•</span>
+            <span>Melaksanakan pembelajaran dan bimbingan secara aktif</span>
+          </li>
+          <li className="flex items-start">
+            <span className="h-5 w-5 text-secondary-600 mr-2">•</span>
+            <span>Membina dan mengembangkan minat dan bakat untuk meraih prestasi</span>
+          </li>
+          <li className="flex items-start">
+            <span className="h-5 w-5 text-secondary-600 mr-2">•</span>
+            <span>Membina dan mengembangkan budi pekerti luhur serta budaya bangsa menuju bangsa yang santun</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
 
       {/* History */}
       <section className="py-16 bg-gray-50">
         <div className="container-narrow">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Sejarah Sekolah</h2>
+          <div className="text-center mb-10">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Sejarah Sekolah</h2>
+        </div>
+        <div className="container-narrow">
+            <div className="text-justify mb-12">
             <p className="text-gray-600 max-w-3xl mx-auto">
-              Perjalanan SD N 1 Bumirejo dalam memberikan pendidikan berkualitas bagi generasi bangsa.
+              SD Negeri 1 Bumirejo terletak di Desa Bumirejo, Kecamatan Mojotengah, Kabupaten Wonosobo, Jawa Tengah. Sekolah ini didirikan pada tanggal 1 Desember 1984 berdasarkan SK Pendirian Nomor 421.2/033/VII/29/84. Sejak berdiri, SD Negeri 1 Bumirejo bernaung di bawah Dinas Pendidikan dan Kebudayaan, serta mengikuti kebijakan dan program Kementerian Pendidikan, Kebudayaan, Riset, dan Teknologi Republik Indonesia.
+              <br /><br />
+              Di awal berdirinya, SD Negeri 1 Bumirejo hanya memiliki sarana belajar yang terbatas. Seiring waktu, sekolah ini terus berbenah untuk memenuhi kebutuhan belajar-mengajar bagi anak-anak di Desa Bumirejo dan sekitarnya. Hingga sekarang, SD Negeri 1 Bumirejo memiliki 6 ruang kelas, 1 perpustakaan, 1 mushola, fasilitas sanitasi yang memadai, serta aliran listrik dari PLN. 
+              <br /><br />
+              Saat ini, sekolah ini menyelenggarakan pembelajaran dengan Kurikulum Merdeka, sesuai dengan kebijakan pendidikan terbaru. Berdasarkan data resmi, SD Negeri 1 Bumirejo berstatus terakreditasi B, dengan akreditasi terakhir berlaku hingga 2027.
+              <br /><br />
+              Hingga sekarang, SD Negeri 1 Bumirejo terus berupaya menjadi tempat belajar yang nyaman dan mendukung perkembangan peserta didik, meskipun masih ada tantangan seperti keterbatasan akses internet. Dengan dukungan orang tua, masyarakat desa, serta pemerintah, sekolah ini diharapkan dapat berkembang lebih baik di masa depan.
             </p>
-          </div>
-
-          <div className="relative border-l-2 border-primary-200 pl-8 ml-4 space-y-12">
-            <div>
-              <div className="absolute -left-4 h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
-                <span className="text-sm font-bold">1</span>
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900">Pendirian (1975)</h3>
-                <p className="mt-2 text-gray-600">
-                  SD N 1 Bumirejo didirikan sebagai upaya pemerintah untuk meningkatkan akses pendidikan di daerah Bumirejo dan sekitarnya.
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <div className="absolute -left-4 h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
-                <span className="text-sm font-bold">2</span>
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900">Pengembangan (1990-2000)</h3>
-                <p className="mt-2 text-gray-600">
-                  Masa pengembangan infrastruktur dan peningkatan kualitas pendidikan dengan penambahan fasilitas perpustakaan dan laboratorium.
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <div className="absolute -left-4 h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
-                <span className="text-sm font-bold">3</span>
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900">Era Modernisasi (2000-2015)</h3>
-                <p className="mt-2 text-gray-600">
-                  Implementasi teknologi dalam proses belajar mengajar dan peningkatan kompetensi guru melalui berbagai pelatihan.
-                </p>
-              </div>
-            </div>
-
-            <div>
-              <div className="absolute -left-4 h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center text-white">
-                <span className="text-sm font-bold">4</span>
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900">Saat Ini (2015-Sekarang)</h3>
-                <p className="mt-2 text-gray-600">
-                  Fokus pada pendidikan karakter, implementasi kurikulum merdeka, dan digitalisasi sistem administrasi sekolah termasuk absensi berbasis QR.
-                </p>
-              </div>
             </div>
           </div>
         </div>
@@ -199,13 +156,13 @@ const AboutPage: React.FC = () => {
             <div className="card p-6 flex flex-col items-center text-center">
               <div className="w-24 h-24 rounded-full bg-gray-200 mb-4">
                 <div className="w-full h-full rounded-full flex items-center justify-center bg-primary-100 text-primary-800 text-4xl font-bold">
-                  BS
+                  HM
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900">Budi Santoso, S.Pd.</h3>
+              <h3 className="text-xl font-semibold text-gray-900">Hallay Megasari, S.Pd.SD</h3>
               <p className="text-primary-600 font-medium">Kepala Sekolah</p>
               <p className="mt-2 text-gray-600 text-sm">
-                Memimpin dan mengarahkan seluruh kegiatan sekolah sesuai dengan visi dan misi
+                Memimpin dan mengarahkan seluruh kegiatan sekolah sesuai dengan visi dan misi.
               </p>
             </div>
 
@@ -213,13 +170,13 @@ const AboutPage: React.FC = () => {
             <div className="card p-6 flex flex-col items-center text-center">
               <div className="w-24 h-24 rounded-full bg-gray-200 mb-4">
                 <div className="w-full h-full rounded-full flex items-center justify-center bg-secondary-100 text-secondary-800 text-4xl font-bold">
-                  SW
+                  UR
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900">Sri Wahyuni, M.Pd.</h3>
-              <p className="text-secondary-600 font-medium">Wakil Kepala Sekolah</p>
+              <h3 className="text-xl font-semibold text-gray-900">Udin Rahmat, S.Ag.</h3>
+              <p className="text-secondary-600 font-medium">Komite Sekolah</p>
               <p className="mt-2 text-gray-600 text-sm">
-                Mendukung kepala sekolah dan mengkoordinasikan kegiatan akademik
+                Memberikan dukungan, saran, dan pertimbangan dalam perumusan serta pelaksanaan kebijakan sekolah demi peningkatan mutu pendidikan.
               </p>
             </div>
 
@@ -227,13 +184,13 @@ const AboutPage: React.FC = () => {
             <div className="card p-6 flex flex-col items-center text-center">
               <div className="w-24 h-24 rounded-full bg-gray-200 mb-4">
                 <div className="w-full h-full rounded-full flex items-center justify-center bg-accent-100 text-accent-800 text-4xl font-bold">
-                  AP
+                  W
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900">Ahmad Prasetyo</h3>
-              <p className="text-accent-600 font-medium">Kepala Tata Usaha</p>
+              <h3 className="text-xl font-semibold text-gray-900">Windarti, S.Pust, S.Pd</h3>
+              <p className="text-accent-600 font-medium">Pustakawan</p>
               <p className="mt-2 text-gray-600 text-sm">
-                Mengelola administrasi dan sistem informasi sekolah
+                Mengelola perpustakaan dan menyediakan bahan bacaan untuk mendukung proses pembelajaran siswa.
               </p>
             </div>
 
@@ -241,13 +198,13 @@ const AboutPage: React.FC = () => {
             <div className="card p-6 flex flex-col items-center text-center">
               <div className="w-24 h-24 rounded-full bg-gray-200 mb-4">
                 <div className="w-full h-full rounded-full flex items-center justify-center bg-primary-100 text-primary-800 text-4xl font-bold">
-                  RH
+                  A
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900">Rina Hastuti, S.Pd.</h3>
-              <p className="text-primary-600 font-medium">Koordinator Kurikulum</p>
+              <h3 className="text-xl font-semibold text-gray-900">Asmanah, S.Pd.SD.</h3>
+              <p className="text-primary-600 font-medium">Guru Kelas 1</p>
               <p className="mt-2 text-gray-600 text-sm">
-                Mengembangkan dan mengimplementasikan kurikulum pembelajaran
+                Merencanakan dan melaksanakan pembelajaran sesuai kurikulum untuk membentuk kompetensi siswa.
               </p>
             </div>
 
@@ -255,13 +212,13 @@ const AboutPage: React.FC = () => {
             <div className="card p-6 flex flex-col items-center text-center">
               <div className="w-24 h-24 rounded-full bg-gray-200 mb-4">
                 <div className="w-full h-full rounded-full flex items-center justify-center bg-secondary-100 text-secondary-800 text-4xl font-bold">
-                  DP
+                  RYL
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900">Doni Prasetya, S.Pd.</h3>
-              <p className="text-secondary-600 font-medium">Koordinator Kesiswaan</p>
+              <h3 className="text-xl font-semibold text-gray-900">Resti Yunita Lestari, S.Pd.</h3>
+              <p className="text-secondary-600 font-medium">Guru Kelas 2</p>
               <p className="mt-2 text-gray-600 text-sm">
-                Mengelola kegiatan kesiswaan dan pembinaan karakter siswa
+                Merencanakan dan melaksanakan pembelajaran sesuai kurikulum untuk membentuk kompetensi siswa.
               </p>
             </div>
 
@@ -269,13 +226,73 @@ const AboutPage: React.FC = () => {
             <div className="card p-6 flex flex-col items-center text-center">
               <div className="w-24 h-24 rounded-full bg-gray-200 mb-4">
                 <div className="w-full h-full rounded-full flex items-center justify-center bg-accent-100 text-accent-800 text-4xl font-bold">
-                  FW
+                  MA
                 </div>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900">Fajar Wibowo</h3>
-              <p className="text-accent-600 font-medium">Koordinator Sarpras</p>
+              <h3 className="text-xl font-semibold text-gray-900">Mutawasilatul Afikah, S.Pd</h3>
+              <p className="text-accent-600 font-medium">Guru Kelas 3</p>
               <p className="mt-2 text-gray-600 text-sm">
-                Mengelola sarana dan prasarana sekolah
+                Merencanakan dan melaksanakan pembelajaran sesuai kurikulum untuk membentuk kompetensi siswa.
+              </p>
+            </div>
+            <div className="card p-6 flex flex-col items-center text-center">
+              <div className="w-24 h-24 rounded-full bg-gray-200 mb-4">
+                <div className="w-full h-full rounded-full flex items-center justify-center bg-primary-100 text-primary-800 text-4xl font-bold">
+                  M
+                </div>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900">Mufid, S.Pd</h3>
+              <p className="text-primary-600 font-medium">Guru Kelas 4</p>
+              <p className="mt-2 text-gray-600 text-sm">
+                Merencanakan dan melaksanakan pembelajaran sesuai kurikulum untuk membentuk kompetensi siswa.
+              </p>
+            </div>
+            <div className="card p-6 flex flex-col items-center text-center">
+              <div className="w-24 h-24 rounded-full bg-gray-200 mb-4">
+                <div className="w-full h-full rounded-full flex items-center justify-center bg-secondary-100 text-secondary-800 text-4xl font-bold">
+                  TW
+                </div>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900">Tri Riwayati, S.Pd</h3>
+              <p className="text-secondary-600 font-medium">Guru Kelas 5</p>
+              <p className="mt-2 text-gray-600 text-sm">
+                Merencanakan dan melaksanakan pembelajaran sesuai kurikulum untuk membentuk kompetensi siswa.
+              </p>
+            </div>
+            <div className="card p-6 flex flex-col items-center text-center">
+              <div className="w-24 h-24 rounded-full bg-gray-200 mb-4">
+                <div className="w-full h-full rounded-full flex items-center justify-center bg-accent-100 text-accent-800 text-4xl font-bold">
+                  TDS
+                </div>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900">Titik Dwi Sujarti, S.Pd</h3>
+              <p className="text-accent-600 font-medium">Guru Kelas 6</p>
+              <p className="mt-2 text-gray-600 text-sm">
+                Merencanakan dan melaksanakan pembelajaran sesuai kurikulum untuk membentuk kompetensi siswa.
+              </p>
+            </div>
+            <div className="card p-6 flex flex-col items-center text-center">
+              <div className="w-24 h-24 rounded-full bg-gray-200 mb-4">
+                <div className="w-full h-full rounded-full flex items-center justify-center bg-primary-100 text-primary-800 text-4xl font-bold">
+                  WK
+                </div>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900">Wiwik Kundari, S.Pd</h3>
+              <p className="text-primary-600 font-medium">Guru Penjas</p>
+              <p className="mt-2 text-gray-600 text-sm">
+                Mengajarkan pendidikan jasmani, olahraga, dan kesehatan.
+              </p>
+            </div>
+            <div className="card p-6 flex flex-col items-center text-center">
+              <div className="w-24 h-24 rounded-full bg-gray-200 mb-4">
+                <div className="w-full h-full rounded-full flex items-center justify-center bg-secondary-100 text-secondary-800 text-4xl font-bold">
+                  MS
+                </div>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900">Mujibatus Salamah, S.Pd.I</h3>
+              <p className="text-secondary-600 font-medium">Guru PAI</p>
+              <p className="mt-2 text-gray-600 text-sm">
+                Mengajarkan Pendidikan Agama Islam sesuai kurikulum.
               </p>
             </div>
           </div>
@@ -299,43 +316,22 @@ const AboutPage: React.FC = () => {
                 <div className="ml-3">
                   <h3 className="text-lg font-semibold text-gray-900">Alamat</h3>
                   <p className="text-gray-600">
-                    Jl. Pendidikan No. 123, Bumirejo<br />
-                    Kecamatan Example, Kabupaten Example<br />
-                    Provinsi Example, 12345
+                    Jl. Dieng Km 4, Bumirejo, Kec. Mojotengah, Kab. Wonosobo Prov. Jawa Tengah, 56351
                   </p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center">
-                    <span className="font-medium text-primary-800">1</span>
-                  </div>
-                  <p className="ml-3 text-gray-600">5 menit dari Terminal Bus Kota</p>
-                </div>
-                <div className="flex items-center">
-                  <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center">
-                    <span className="font-medium text-primary-800">2</span>
-                  </div>
-                  <p className="ml-3 text-gray-600">10 menit dari Pusat Kota</p>
-                </div>
-                <div className="flex items-center">
-                  <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center">
-                    <span className="font-medium text-primary-800">3</span>
-                  </div>
-                  <p className="ml-3 text-gray-600">Dilalui oleh angkutan umum kota</p>
                 </div>
               </div>
             </div>
 
             <div className="h-96 bg-gray-300 rounded-lg overflow-hidden">
-              {/* Embed a map here - this is a placeholder */}
-              <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                <div className="text-center">
-                  <MapPin className="h-10 w-10 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-600">Peta Lokasi SD N 1 Bumirejo</p>
-                </div>
-              </div>
+                <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3955.3758750471956!2d109.9152554!3d-7.317598!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e700b395b6fb641%3A0x4ebd8ebbdc48fd60!2sSDN%201%20Bumirejo!5e0!3m2!1sid!2sid!4v1720267500000!5m2!1sid!2sid"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen={true}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                ></iframe>
             </div>
           </div>
         </div>
