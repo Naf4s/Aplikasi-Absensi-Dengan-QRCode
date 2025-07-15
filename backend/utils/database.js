@@ -117,6 +117,17 @@ export async function initializeDatabase() {
 
     console.log('Database is ready.');
 
+    // Seed classes 1 to 6 if not exists
+    const existingClasses = await db.all('SELECT name FROM classes WHERE name IN (?, ?, ?, ?, ?, ?)', 
+      '1', '2', '3', '4', '5', '6');
+    const existingClassNames = existingClasses.map(c => c.name);
+    const classNamesToAdd = ['1', '2', '3', '4', '5', '6']
+      .filter(name => !existingClassNames.includes(name));
+    for (const name of classNamesToAdd) {
+      const id = uuidv4();
+      await db.run('INSERT INTO classes (id, name) VALUES (?, ?)', id, name);
+    }
+
   } catch (error) {
     console.error('Failed to initialize database:', error);
     process.exit(1);
