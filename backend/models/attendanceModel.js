@@ -49,7 +49,6 @@ export const recordAttendance = async (studentId, date, status, timeIn = null, n
 
     if (totalAlpha >= 3) {
       const siswa = await getStudentById(studentId); // pastikan return { nama, no_hp_ortu }
-      console.log('📌 Data siswa:', siswa);
 
     if (siswa?.phone_number) {
       const pesan = `📢 *Pemberitahuan Absensi Siswa*\n\nNama: *${siswa.name}*\nKelas: *${siswa.class}*\n\nKami informasikan bahwa *${siswa.name}* telah tercatat *alpa sebanyak ${totalAlpha} kali* pada bulan *${month}/${year}*.\n\nMohon perhatian dan pendampingan dari Bapak/Ibu agar kehadiran dan disiplin *${siswa.name}* dapat ditingkatkan.\n\nTerima kasih atas kerja samanya.🙏`;
@@ -133,8 +132,47 @@ export const getStudentAttendanceStatusForDate = async (studentId, date) => {
   );
 };
 
+export const getStudentAttendanceStatusForMonth = async (monthName) => {
+  const db = getDb();
+  return db.all(
+    `
+    SELECT 
+      s.id,
+      s.name,
+      s.nis,
+      s.class,
+      s.gender,
+      s.phone_number,
+      ar.status,
+      COUNT(ar.date) AS total_absent,
+      GROUP_CONCAT(ar.date, ', ') AS absent_dates
+    FROM attendance_records ar
+    JOIN students s ON ar.student_id = s.id
+    WHERE ar.status = 'absent'
+      AND strftime('%Y-%m', ar.date) = ?
+    GROUP BY s.id, s.name, s.nis, s.class, s.gender
+    ORDER BY s.name;
+`,
+    monthName
+  );
+};
+
 export const getStudentsByClass = async (className) => {
   const db = getDb();
   // Ambil juga info dasar siswa saja, tidak perlu semua kolom.
   return db.all('SELECT id, name, nis, class, gender FROM students WHERE class = ?', className);
+};
+
+export const getAbsentMonth = async () => {
+  const db = getDb();
+  return db.all(`
+    SELECT DISTINCT
+        strftime('%Y-%m', date) AS bulan_alpha
+    FROM
+        attendance_records
+    WHERE
+        status = 'absent'
+    ORDER BY
+        bulan_alpha;
+    `);
 };

@@ -2,7 +2,8 @@ import React from 'react';
 import { NavLink } from 'react-router-dom'; // Gunakan NavLink untuk styling aktif
 import { 
   X, School, LayoutDashboard, Users, QrCode, 
-  ClipboardList, BarChart2, Settings, LogOut, BookOpen, GraduationCap, CalendarCheck, FileText 
+  ClipboardList, BarChart2, Settings, LogOut, BookOpen, GraduationCap, CalendarCheck, FileText, 
+  Send
 } from 'lucide-react'; // Import semua ikon yang dibutuhkan
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -29,6 +30,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isOpen, onClose }) 
       { name: 'Pengguna', path: '/dashboard/users', icon: Users, permission: 'manage_users' },
       { name: 'Kelas', path: '/dashboard/classes', icon: BookOpen, permission: 'manage_classes' },
       { name: 'kenaikan kelas', path: '/dashboard/settings/promotion', icon: GraduationCap, permission: 'manage_classes' },
+      { name: 'Notifikasi Alpha', path: '/dashboard/alpha', icon: Send, permission: 'send_notification' },
       { name: 'Pengaturan', path: '/dashboard/settings', icon: Settings, permission: 'manage_access' }
     ];
 

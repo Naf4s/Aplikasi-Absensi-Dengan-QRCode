@@ -30,6 +30,7 @@ const rolePermissions = {
     'manage_backup',
     'manage_access',
     'mark_attendance',
+    'send_notification',
     'manage_users',
     'manage_classes' // PERBAIKAN: Tambahkan permission 'manage_classes' untuk admin
   ],

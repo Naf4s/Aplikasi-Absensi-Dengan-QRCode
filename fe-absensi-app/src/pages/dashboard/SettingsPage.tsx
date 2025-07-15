@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 
 const SettingsPage = () => {
   const [name, setName] = useState('');
@@ -6,6 +7,27 @@ const SettingsPage = () => {
   const [emailNotifications, setEmailNotifications] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [message, setMessage] = useState('');
+
+  const [qr, setQr] = useState<string | null>(null);
+  const [isReady, setIsReady] = useState(false);
+
+  const fetchQRStatus = async () => {
+    try {
+      const response = await fetch("/api/wa-status");
+      const data = await response.json();
+      setQr(data.qr);
+      setIsReady(data.isReady);
+    } catch (error) {
+      console.error("❌ Gagal fetch QR status:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchQRStatus(); // ambil data awal
+    const interval = setInterval(fetchQRStatus, 3000); // polling setiap 3 detik
+
+    return () => clearInterval(interval); // bersihkan timer saat unmount
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,6 +97,27 @@ const SettingsPage = () => {
         <div>
           <h2 className="text-xl font-semibold mb-4">Preferences</h2>
           <div className="space-y-3">
+            <div className="mt-6 p-4 border rounded-lg bg-gray-50">
+          <h3 className="text-lg font-semibold mb-2">WhatsApp Integration</h3>
+          {!isReady && qr ? (
+            <div className="flex flex-col items-center justify-center">
+              <p className="text-gray-700 mb-3">Scan QR code ini dengan WhatsApp:</p>
+              <div className="p-2 border border-gray-300 bg-white rounded shadow-sm">
+                <QRCodeSVG value={qr} size={200} level="M" fgColor="#000000" bgColor="#FFFFFF" includeMargin />
+              </div>
+              <p className="mt-3 text-sm text-gray-600">Pastikan ponsel Anda terhubung ke internet.</p>
+            </div>
+          ) : isReady ? (
+            <div className="text-center text-green-600 font-medium">
+              <p>✅ WhatsApp sudah terhubung dan siap!</p>
+            </div>
+          ) : (
+            <div className="text-center text-gray-500">
+              <p>Menunggu QR Code dari server...</p>
+              <p className="text-sm">Pastikan server Anda berjalan.</p>
+            </div>
+          )}
+        </div>
             <div className="flex items-center">
               <input
                 type="checkbox"

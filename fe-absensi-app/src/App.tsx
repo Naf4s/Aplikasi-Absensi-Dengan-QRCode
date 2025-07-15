@@ -25,6 +25,7 @@ import UsersPage from './pages/dashboard/UsersPage';
 import AcademicYearSettingsPage from './pages/dashboard/AcademicYearSettingsPage';
 import ClassesPage from './pages/dashboard/ClassesPage'; // Import ClassesPage yang baru
 import PromotionSettingsPage from './pages/dashboard/PromotionSettingsPage'; // Import PromotionSettingsPage
+import AlphaPage from './pages/dashboard/alphapage';
 
 
 // Komponen ini akan menangani redirect setelah login
@@ -85,6 +86,7 @@ function App() {
             <Route path="settings/academic-year" element={<AcademicYearSettingsPage />} />
             <Route path="settings/promotion" element={<PromotionSettingsPage />} /> {/* Added promotion route */}
             <Route path="classes" element={<ClassesPage />} />{/* Route baru untuk Manajemen Kelas */}
+            <Route path="alpha" element={<AlphaPage />} />
           </Route>
         </Routes>
       </Router>

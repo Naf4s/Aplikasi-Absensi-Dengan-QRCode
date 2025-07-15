@@ -1,6 +1,6 @@
     // backend/routes/attendanceRoutes.js
     import express from 'express';
-    import { markAttendance, getAttendance, scanQrCode, getStudentStatusesByClassAndDate } from '../controllers/attendanceController.js';
+    import { markAttendance, getAttendance, scanQrCode, getStudentStatusesByClassAndDate, getAbsentMonth, getStudentStatusesByMonth, sendWa } from '../controllers/attendanceController.js';
     import authMiddleware, { authorizeRoles } from '../middleware/authMiddleware.js'; // Import middleware otentikasi dan otorisasi
 
     const router = express.Router();
@@ -23,6 +23,12 @@
 
     // Route untuk mendapatkan status absensi siswa per kelas dan tanggal
     router.get('/status-by-class', authMiddleware, authorizeRoles('admin', 'teacher'), getStudentStatusesByClassAndDate);
+
+    router.get('/status-by-month', authMiddleware, authorizeRoles('admin', 'teacher'), getStudentStatusesByMonth);
+
+    router.get('/absent-month', authMiddleware, authorizeRoles('admin'), getAbsentMonth);
+
+    router.post('/sendWa', authMiddleware, authorizeRoles('admin'), sendWa);
 
 
     export default router;
