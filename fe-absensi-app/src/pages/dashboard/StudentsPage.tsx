@@ -43,6 +43,25 @@ interface SortConfig {
 }
 
 const StudentsPage: React.FC = () => {
+  // State untuk filter per kolom
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  // State untuk pagination
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
+  // Handler filter per kolom
+  const handleColumnFilterChange = (key: keyof Student, value: string) => {
+    setColumnFilters(prev => ({ ...prev, [key]: value }));
+    setPage(1); // Reset ke halaman 1 saat filter berubah
+  };
+  // Handler pagination
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1) return;
+    setPage(newPage);
+  };
+  const handleRowsPerPageChange = (rows: number) => {
+    setRowsPerPage(rows);
+    setPage(1);
+  };
   // State untuk error import modal
   const [importError, setImportError] = useState<string | null>(null);
   const { user: currentUser, hasPermission } = useAuth();
@@ -323,23 +342,30 @@ const StudentsPage: React.FC = () => {
 
 
   const sortedStudents = useMemo(() => { 
-    let sortableStudents = [...students]; 
-
-    sortableStudents = sortableStudents.filter(student =>
+    let filtered = [...students];
+    // Filter global search
+    filtered = filtered.filter(student =>
       student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.nis.toLowerCase().includes(searchTerm.toLowerCase())
     );
-
+    // Filter per kolom
+    Object.entries(columnFilters).forEach(([key, value]) => {
+      if (value) {
+        filtered = filtered.filter(student => {
+          const val = String(student[key as keyof Student] || '').toLowerCase();
+          return val.includes(value.toLowerCase());
+        });
+      }
+    });
+    // Sorting
     if (sortConfig.key !== null && sortConfig.direction !== null) {
-      sortableStudents.sort((a, b) => {
+      filtered.sort((a, b) => {
         const aValue = a[sortConfig.key!];
         const bValue = b[sortConfig.key!];
-
         if (typeof aValue === 'string' && typeof bValue === 'string') {
           const comparison = aValue.localeCompare(bValue);
           return sortConfig.direction === 'ascending' ? comparison : -comparison;
-        } 
-        else if (aValue < bValue) {
+        } else if (aValue < bValue) {
           return sortConfig.direction === 'ascending' ? -1 : 1;
         } else if (aValue > bValue) {
           return sortConfig.direction === 'ascending' ? 1 : -1;
@@ -347,9 +373,14 @@ const StudentsPage: React.FC = () => {
         return 0;
       });
     }
+    return filtered;
+  }, [students, searchTerm, columnFilters, sortConfig]);
 
-    return sortableStudents;
-  }, [students, searchTerm, sortConfig]); 
+  // Data untuk halaman saat ini
+  const pagedStudents = useMemo(() => {
+    const startIdx = (page - 1) * rowsPerPage;
+    return sortedStudents.slice(startIdx, startIdx + rowsPerPage);
+  }, [sortedStudents, page, rowsPerPage]);
 
 
   const generateQRData = (student: Student) => {
@@ -574,9 +605,9 @@ const StudentsPage: React.FC = () => {
 
       {/* Ini Wajib Kamu Ingat! (Penggunaan Komponen StudentTable) */}
       <StudentTable 
-        students={sortedStudents} 
+        students={pagedStudents}
         isLoading={isLoading}
-        error={pageError} 
+        error={pageError}
         onEdit={handleEdit}
         onDeleteConfirmation={handleDeleteConfirmation}
         onShowQR={id => { 
@@ -584,10 +615,17 @@ const StudentsPage: React.FC = () => {
           if (studentFound) {
             setQrStudentData(studentFound); 
           }
-        }} 
+        }}
         searchTerm={searchTerm}
-        sortConfig={sortConfig} 
-        onSort={handleSort} 
+        sortConfig={sortConfig}
+        onSort={handleSort}
+        columnFilters={columnFilters}
+        onColumnFilterChange={handleColumnFilterChange}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        totalRows={sortedStudents.length}
+        onPageChange={handlePageChange}
+        onRowsPerPageChange={handleRowsPerPageChange}
       />
 
       {/* Ini Wajib Kamu Ingat! (Penggunaan Komponen StudentFormModal) */}

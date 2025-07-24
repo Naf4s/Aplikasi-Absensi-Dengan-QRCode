@@ -20,6 +20,13 @@ interface StudentTableProps {
   searchTerm: string; 
   sortConfig: SortConfig; // Terima sortConfig dari parent
   onSort: (key: keyof Student) => void; // Terima fungsi onSort dari parent
+  columnFilters: Record<string, string>;
+  onColumnFilterChange: (key: keyof Student, value: string) => void;
+  page: number;
+  rowsPerPage: number;
+  totalRows: number;
+  onPageChange: (page: number) => void;
+  onRowsPerPageChange: (rows: number) => void;
 }
 
 // Interface Student (diulang di sini atau bisa di file types global)
@@ -38,7 +45,8 @@ interface Student {
 }
 
 const StudentTable: React.FC<StudentTableProps> = ({ 
-  students, isLoading, error, onEdit, onDeleteConfirmation, onShowQR, searchTerm, sortConfig, onSort
+  students, isLoading, error, onEdit, onDeleteConfirmation, onShowQR, searchTerm, sortConfig, onSort,
+  columnFilters, onColumnFilterChange, page, rowsPerPage, totalRows, onPageChange, onRowsPerPageChange
 }) => {
   const { hasPermission } = useAuth(); // Dapatkan hasPermission
 
@@ -83,55 +91,51 @@ const StudentTable: React.FC<StudentTableProps> = ({
               {/* Header Kolom yang Bisa Disorting */}
               <th scope="col" 
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                onClick={() => onSort('nis')} // Panggil onSort saat diklik
+                onClick={() => onSort('nis')}
               >
-                <div className="flex items-center">
-                  NIS {getSortIcon('nis')}
-                </div>
+                <div className="flex items-center">NIS {getSortIcon('nis')}</div>
               </th>
               <th scope="col" 
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => onSort('name')}
               >
-                <div className="flex items-center">
-                  Nama {getSortIcon('name')}
-                </div>
+                <div className="flex items-center">Nama {getSortIcon('name')}</div>
               </th>
               <th scope="col" 
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => onSort('class')}
               >
-                <div className="flex items-center">
-                  Kelas {getSortIcon('class')}
-                </div>
+                <div className="flex items-center">Kelas {getSortIcon('class')}</div>
               </th>
               <th scope="col" 
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => onSort('gender')}
               >
-                <div className="flex items-center">
-                  Jenis Kelamin {getSortIcon('gender')}
-                </div>
+                <div className="flex items-center">Jenis Kelamin {getSortIcon('gender')}</div>
               </th>
               <th scope="col" 
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => onSort('birth_date')}
               >
-                <div className="flex items-center">
-                  Tanggal Lahir {getSortIcon('birth_date')}
-                </div>
+                <div className="flex items-center">Tanggal Lahir {getSortIcon('birth_date')}</div>
               </th>
               <th scope="col" 
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => onSort('parent_name')}
               >
-                <div className="flex items-center">
-                  Nama Orang Tua {getSortIcon('parent_name')}
-                </div>
+                <div className="flex items-center">Nama Orang Tua {getSortIcon('parent_name')}</div>
               </th>
-              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Aksi
-              </th>
+              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+            </tr>
+            {/* Search input per kolom */}
+            <tr>
+              <td className="px-6 py-2"><input type="text" className="w-full border rounded px-2 py-1 text-xs" placeholder="Cari NIS" value={columnFilters.nis || ''} onChange={e => onColumnFilterChange('nis', e.target.value)} /></td>
+              <td className="px-6 py-2"><input type="text" className="w-full border rounded px-2 py-1 text-xs" placeholder="Cari Nama" value={columnFilters.name || ''} onChange={e => onColumnFilterChange('name', e.target.value)} /></td>
+              <td className="px-6 py-2"><input type="text" className="w-full border rounded px-2 py-1 text-xs" placeholder="Cari Kelas" value={columnFilters.class || ''} onChange={e => onColumnFilterChange('class', e.target.value)} /></td>
+              <td className="px-6 py-2"><input type="text" className="w-full border rounded px-2 py-1 text-xs" placeholder="Cari Gender" value={columnFilters.gender || ''} onChange={e => onColumnFilterChange('gender', e.target.value)} /></td>
+              <td className="px-6 py-2"><input type="text" className="w-full border rounded px-2 py-1 text-xs" placeholder="Cari Tgl Lahir" value={columnFilters.birth_date || ''} onChange={e => onColumnFilterChange('birth_date', e.target.value)} /></td>
+              <td className="px-6 py-2"><input type="text" className="w-full border rounded px-2 py-1 text-xs" placeholder="Cari Orang Tua" value={columnFilters.parent_name || ''} onChange={e => onColumnFilterChange('parent_name', e.target.value)} /></td>
+              <td></td>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -144,49 +148,22 @@ const StudentTable: React.FC<StudentTableProps> = ({
             ) : (
               students.map((student) => (
                 <tr key={student.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {student.nis}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {student.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {student.class}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {student.gender === 'L' ? 'Laki-laki' : 'Perempuan'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(student.birth_date).toLocaleDateString('id-ID')}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {student.parent_name}
-                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{student.nis}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{student.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.class}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.gender === 'L' ? 'Laki-laki' : 'Perempuan'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(student.birth_date).toLocaleDateString('id-ID')}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.parent_name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end space-x-2">
                       {hasPermission('manage_students') && (
                         <>
-                          <button
-                            onClick={() => onEdit(student)}
-                            className="text-primary-600 hover:text-primary-900"
-                          >
-                            <Edit className="h-5 w-5" />
-                          </button>
-                          <button
-                            onClick={() => onDeleteConfirmation(student.id)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            <Trash2 className="h-5 w-5" />
-                          </button>
+                          <button onClick={() => onEdit(student)} className="text-primary-600 hover:text-primary-900"><Edit className="h-5 w-5" /></button>
+                          <button onClick={() => onDeleteConfirmation(student.id)} className="text-red-600 hover:text-red-900"><Trash2 className="h-5 w-5" /></button>
                         </>
                       )}
                       {hasPermission('generate_qr') && (
-                        <button
-                          onClick={() => onShowQR(student.id)}
-                          className="text-gray-600 hover:text-gray-900"
-                        >
-                          <QrCode className="h-5 w-5" />
-                        </button>
+                        <button onClick={() => onShowQR(student.id)} className="text-gray-600 hover:text-gray-900"><QrCode className="h-5 w-5" /></button>
                       )}
                     </div>
                   </td>
@@ -195,6 +172,22 @@ const StudentTable: React.FC<StudentTableProps> = ({
             )}
           </tbody>
         </table>
+      </div>
+      {/* Pagination */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 py-2 border-t bg-gray-50 text-xs">
+        <div className="flex items-center gap-2">
+          <span>Go to page:</span>
+          <input type="number" min={1} max={Math.ceil(totalRows / rowsPerPage)} value={page} onChange={e => onPageChange(Number(e.target.value))} className="border rounded px-1 w-12" />
+        </div>
+        <div className="flex items-center gap-2">
+          <span>Show rows:</span>
+          <select value={rowsPerPage} onChange={e => onRowsPerPageChange(Number(e.target.value))} className="border rounded px-1">
+            {[10, 25, 50, 100].map(opt => <option key={opt} value={opt}>{opt}</option>)}
+          </select>
+          <span>{(page - 1) * rowsPerPage + 1}-{Math.min(page * rowsPerPage, totalRows)} of {totalRows}</span>
+          <button disabled={page === 1} onClick={() => onPageChange(page - 1)} className="border rounded px-2">&#9664;</button>
+          <button disabled={page === Math.ceil(totalRows / rowsPerPage)} onClick={() => onPageChange(page + 1)} className="border rounded px-2">&#9654;</button>
+        </div>
       </div>
     </div>
   );
