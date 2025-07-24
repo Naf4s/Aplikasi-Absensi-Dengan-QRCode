@@ -1,30 +1,26 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Search, Plus, Upload, Info } from 'lucide-react'; 
+import { Search, Plus, Upload, Info, AlertCircle } from 'lucide-react'; 
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
-// import QRCode from 'qrcode'; // Temporarily commented out due to missing types, will handle alternative
 
-// Ini Wajib Kamu Ingat! (Import Komponen yang Baru Dibuat)
-// Pastikan komponen-komponen ini sudah ada di folder src/components/common/ dan src/components/students/
 import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
 import StudentFormModal from '../../components/students/StudentFormModal';
 import ImportResultsModal from '../../components/students/ImportResultsModal';
 import ImportGuidelinesModal from '../../components/students/ImportGuidelinesModal';
 import StudentTable from '../../components/students/StudentTable'; 
-import StudentQrModal from '../../components/students/StudentQrModal'; // Ini yang BARU diimpor!
+import StudentQrModal from '../../components/students/StudentQrModal'; 
 
-// Ini Wajib Kamu Ingat! (Konsistensi Interface Global)
-// Lebih baik definisikan interface ini di satu tempat (misal: src/types/models.ts)
+
 interface Student {
   id: string;
   nis: string;
   name: string;
   class: string;
   gender: 'L' | 'P';
-  birth_date: string; // FormatYYYY-MM-DD
+  birth_date: string; 
   address?: string;
   parent_name?: string;
   phone_number?: string;
@@ -32,7 +28,7 @@ interface Student {
   updated_at?: string;
 }
 
-// Ini Wajib Kamu Ingat! (Interface untuk Kelas)
+// Interface untuk Kelas)
 interface ClassItem {
   id: string;
   name: string;
@@ -47,6 +43,8 @@ interface SortConfig {
 }
 
 const StudentsPage: React.FC = () => {
+  // State untuk error import modal
+  const [importError, setImportError] = useState<string | null>(null);
   const { user: currentUser, hasPermission } = useAuth();
   
   // --- START: DEKLARASI SEMUA STATE DAN REF DI BAGIAN PALING ATAS KOMPONEN ---
@@ -74,11 +72,6 @@ const StudentsPage: React.FC = () => {
 
   const [classes, setClasses] = useState<ClassItem[]>([]); 
   // --- END: DEKLARASI SEMUA STATE DAN REF ---
-
-
-  // --- START: Deklarasi Fungsi-fungsi dengan useCallback / useMemo ---
-  // Ini Wajib Kamu Ingat! (Fungsi dengan useCallback Dideklarasikan Setelah SEMUA State)
-  // Ini memastikan semua dependensi (state, setter) sudah ada sebelum fungsi ini dibuat.
 
   const resetForm = useCallback(() => { 
     setFormData({
@@ -304,7 +297,8 @@ const StudentsPage: React.FC = () => {
         
       } catch (err: any) {
         console.error('Error processing file or importing students:', err);
-        setPageError(`Gagal mengimpor siswa: ${err.message || 'Terjadi kesalahan.'}`); 
+        setPageError(null); // Jangan tampilkan di atas tabel, gunakan modal khusus
+        setImportError(err.message || 'Terjadi kesalahan saat mengimpor siswa.');
         setImportResults(null); 
         setShowImportResultsModal(false);
       } finally {
@@ -467,6 +461,22 @@ const StudentsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Modal Alert untuk Error Import Siswa */}
+      {importError && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 flex flex-col items-center animate-slide-up">
+            <AlertCircle className="h-12 w-12 text-red-500 mb-2" />
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Gagal Impor Siswa</h2>
+            <p className="text-center text-gray-700 mb-4">{importError}</p>
+            <button
+              className="btn-primary w-full"
+              onClick={() => setImportError(null)}
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      )}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">Manajemen Siswa</h1>
         <div className="flex space-x-2">

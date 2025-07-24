@@ -24,7 +24,7 @@ import UsersPage from './pages/dashboard/UsersPage';
 import AcademicYearSettingsPage from './pages/dashboard/AcademicYearSettingsPage';
 import ClassesPage from './pages/dashboard/ClassesPage'; // Import ClassesPage yang baru
 import PromotionSettingsPage from './pages/dashboard/PromotionSettingsPage'; // Import PromotionSettingsPage
-import AlphaPage from './pages/dashboard/alphapage';
+import AlphaPage from './pages/dashboard/AlphaPage';
 import NewsManagementPage from './pages/dashboard/NewsManagementPage'; // Import NewsManagementPage
 
 // Komponen ini akan menangani redirect setelah login
