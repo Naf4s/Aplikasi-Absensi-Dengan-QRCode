@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Calendar, Clock, Download, Filter, Search, Users, RefreshCw, X, AlertCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react'; 
 import { useAuth } from '../../contexts/AuthContext';
@@ -28,6 +29,7 @@ interface StudentAttendanceStatus {
 }
 
 const AttendancePage: React.FC = () => {
+  const navigate = useNavigate();
   const { user, hasPermission } = useAuth();
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [studentsAttendance, setStudentsAttendance] = useState<StudentAttendanceStatus[]>([]);
@@ -180,7 +182,13 @@ const AttendancePage: React.FC = () => {
           
           {selectedClass && (
             <button
-              onClick={() => setActiveTab(activeTab === 'list' ? 'qr' : 'list')}
+              onClick={() => {
+                if (activeTab === 'list') {
+                  navigate('/dashboard/scanner');
+                } else {
+                  setActiveTab('list');
+                }
+              }}
               className="btn-primary"
             >
               {activeTab === 'list' ? 'Mode QR Code' : 'Mode Daftar'}
