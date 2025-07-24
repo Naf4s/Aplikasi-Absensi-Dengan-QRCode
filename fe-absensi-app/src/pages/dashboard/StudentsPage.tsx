@@ -477,23 +477,65 @@ const StudentsPage: React.FC = () => {
           </div>
         </div>
       )}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Manajemen Siswa</h1>
-        <div className="flex space-x-2">
-          {/* Tombol Ketentuan Impor */}
+      <div className="mb-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2 sm:mb-0">Manajemen Siswa</h1>
+          {/* Tombol versi web (desktop/tablet) */}
+          <div className="hidden sm:flex space-x-2">
+            <button
+              onClick={() => setShowGuidelinesModal(true)}
+              className="btn-outline flex items-center text-gray-600 hover:text-gray-900"
+            >
+              <Info className="h-5 w-5 mr-1" />
+              Ketentuan Impor
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="btn-outline flex items-center"
+            >
+              <Upload className="h-5 w-5 mr-1" />
+              Import Excel
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept=".xlsx, .xls"
+              className="hidden"
+            />
+            <button
+              onClick={exportAllQRCodesToPDF}
+              className="btn-outline flex items-center ml-2"
+              disabled={isLoading || students.length === 0}
+              title="Export Semua QR Code ke PDF"
+            >
+              Export QR Codes
+            </button>
+            <button
+              onClick={() => setShowForm(true)}
+              className="btn-primary flex items-center"
+            >
+              <Plus className="h-5 w-5 mr-1" />
+              Tambah Siswa
+            </button>
+          </div>
+        </div>
+        {/* Tombol versi mobile */}
+        <div className="flex flex-wrap gap-2 mt-3 sm:hidden">
           <button
             onClick={() => setShowGuidelinesModal(true)}
-            className="btn-outline flex items-center text-gray-600 hover:text-gray-900"
+            className="btn-outline flex items-center text-gray-600 hover:text-gray-900 px-2 py-1 text-xs rounded"
+            style={{ minWidth: 0 }}
           >
-            <Info className="h-5 w-5 mr-1" />
+            <Info className="h-4 w-4 mr-1" />
             Ketentuan Impor
           </button>
-          {/* Tombol Import Excel */}
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="btn-outline flex items-center"
+            className="btn-outline flex items-center px-2 py-1 text-xs rounded"
+            style={{ minWidth: 0 }}
           >
-            <Upload className="h-5 w-5 mr-1" />
+            <Upload className="h-4 w-4 mr-1" />
             Import Excel
           </button>
           <input
@@ -503,20 +545,21 @@ const StudentsPage: React.FC = () => {
             accept=".xlsx, .xls"
             className="hidden"
           />
-          {/* Tombol Tambah Siswa */}
           <button
             onClick={exportAllQRCodesToPDF}
-            className="btn-outline flex items-center ml-2"
+            className="btn-outline flex items-center px-2 py-1 text-xs rounded"
             disabled={isLoading || students.length === 0}
             title="Export Semua QR Code ke PDF"
+            style={{ minWidth: 0 }}
           >
             Export QR Codes
           </button>
           <button
             onClick={() => setShowForm(true)}
-            className="btn-primary flex items-center"
+            className="btn-primary flex items-center px-2 py-1 text-xs rounded"
+            style={{ minWidth: 0 }}
           >
-            <Plus className="h-5 w-5 mr-1" />
+            <Plus className="h-4 w-4 mr-1" />
             Tambah Siswa
           </button>
         </div>
