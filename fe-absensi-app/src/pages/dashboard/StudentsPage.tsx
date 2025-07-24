@@ -1,30 +1,26 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Search, Plus, Upload, Info } from 'lucide-react'; 
+import { Search, Plus, Upload, Info, AlertCircle } from 'lucide-react'; 
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
 import axios from 'axios';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
-// import QRCode from 'qrcode'; // Temporarily commented out due to missing types, will handle alternative
 
-// Ini Wajib Kamu Ingat! (Import Komponen yang Baru Dibuat)
-// Pastikan komponen-komponen ini sudah ada di folder src/components/common/ dan src/components/students/
 import ConfirmDeleteModal from '../../components/common/ConfirmDeleteModal';
 import StudentFormModal from '../../components/students/StudentFormModal';
 import ImportResultsModal from '../../components/students/ImportResultsModal';
 import ImportGuidelinesModal from '../../components/students/ImportGuidelinesModal';
 import StudentTable from '../../components/students/StudentTable'; 
-import StudentQrModal from '../../components/students/StudentQrModal'; // Ini yang BARU diimpor!
+import StudentQrModal from '../../components/students/StudentQrModal'; 
 
-// Ini Wajib Kamu Ingat! (Konsistensi Interface Global)
-// Lebih baik definisikan interface ini di satu tempat (misal: src/types/models.ts)
+
 interface Student {
   id: string;
   nis: string;
   name: string;
   class: string;
   gender: 'L' | 'P';
-  birth_date: string; // FormatYYYY-MM-DD
+  birth_date: string; 
   address?: string;
   parent_name?: string;
   phone_number?: string;
@@ -32,7 +28,7 @@ interface Student {
   updated_at?: string;
 }
 
-// Ini Wajib Kamu Ingat! (Interface untuk Kelas)
+// Interface untuk Kelas)
 interface ClassItem {
   id: string;
   name: string;
@@ -47,6 +43,27 @@ interface SortConfig {
 }
 
 const StudentsPage: React.FC = () => {
+  // State untuk filter per kolom
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  // State untuk pagination
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
+  // Handler filter per kolom
+  const handleColumnFilterChange = (key: keyof Student, value: string) => {
+    setColumnFilters(prev => ({ ...prev, [key]: value }));
+    setPage(1); // Reset ke halaman 1 saat filter berubah
+  };
+  // Handler pagination
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1) return;
+    setPage(newPage);
+  };
+  const handleRowsPerPageChange = (rows: number) => {
+    setRowsPerPage(rows);
+    setPage(1);
+  };
+  // State untuk error import modal
+  const [importError, setImportError] = useState<string | null>(null);
   const { user: currentUser, hasPermission } = useAuth();
   
   // --- START: DEKLARASI SEMUA STATE DAN REF DI BAGIAN PALING ATAS KOMPONEN ---
@@ -74,11 +91,6 @@ const StudentsPage: React.FC = () => {
 
   const [classes, setClasses] = useState<ClassItem[]>([]); 
   // --- END: DEKLARASI SEMUA STATE DAN REF ---
-
-
-  // --- START: Deklarasi Fungsi-fungsi dengan useCallback / useMemo ---
-  // Ini Wajib Kamu Ingat! (Fungsi dengan useCallback Dideklarasikan Setelah SEMUA State)
-  // Ini memastikan semua dependensi (state, setter) sudah ada sebelum fungsi ini dibuat.
 
   const resetForm = useCallback(() => { 
     setFormData({
@@ -304,7 +316,8 @@ const StudentsPage: React.FC = () => {
         
       } catch (err: any) {
         console.error('Error processing file or importing students:', err);
-        setPageError(`Gagal mengimpor siswa: ${err.message || 'Terjadi kesalahan.'}`); 
+        setPageError(null); // Jangan tampilkan di atas tabel, gunakan modal khusus
+        setImportError(err.message || 'Terjadi kesalahan saat mengimpor siswa.');
         setImportResults(null); 
         setShowImportResultsModal(false);
       } finally {
@@ -329,23 +342,30 @@ const StudentsPage: React.FC = () => {
 
 
   const sortedStudents = useMemo(() => { 
-    let sortableStudents = [...students]; 
-
-    sortableStudents = sortableStudents.filter(student =>
+    let filtered = [...students];
+    // Filter global search
+    filtered = filtered.filter(student =>
       student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.nis.toLowerCase().includes(searchTerm.toLowerCase())
     );
-
+    // Filter per kolom
+    Object.entries(columnFilters).forEach(([key, value]) => {
+      if (value) {
+        filtered = filtered.filter(student => {
+          const val = String(student[key as keyof Student] || '').toLowerCase();
+          return val.includes(value.toLowerCase());
+        });
+      }
+    });
+    // Sorting
     if (sortConfig.key !== null && sortConfig.direction !== null) {
-      sortableStudents.sort((a, b) => {
+      filtered.sort((a, b) => {
         const aValue = a[sortConfig.key!];
         const bValue = b[sortConfig.key!];
-
         if (typeof aValue === 'string' && typeof bValue === 'string') {
           const comparison = aValue.localeCompare(bValue);
           return sortConfig.direction === 'ascending' ? comparison : -comparison;
-        } 
-        else if (aValue < bValue) {
+        } else if (aValue < bValue) {
           return sortConfig.direction === 'ascending' ? -1 : 1;
         } else if (aValue > bValue) {
           return sortConfig.direction === 'ascending' ? 1 : -1;
@@ -353,9 +373,14 @@ const StudentsPage: React.FC = () => {
         return 0;
       });
     }
+    return filtered;
+  }, [students, searchTerm, columnFilters, sortConfig]);
 
-    return sortableStudents;
-  }, [students, searchTerm, sortConfig]); 
+  // Data untuk halaman saat ini
+  const pagedStudents = useMemo(() => {
+    const startIdx = (page - 1) * rowsPerPage;
+    return sortedStudents.slice(startIdx, startIdx + rowsPerPage);
+  }, [sortedStudents, page, rowsPerPage]);
 
 
   const generateQRData = (student: Student) => {
@@ -368,7 +393,7 @@ const StudentsPage: React.FC = () => {
     });
   };
 
-  const exportAllQRCodesToPDF = useCallback(async () => {
+  const exportAllQRCodesToXLSX = useCallback(async () => {
     if (students.length === 0) {
       setPageError("Tidak ada data siswa untuk diekspor.");
       return;
@@ -376,70 +401,54 @@ const StudentsPage: React.FC = () => {
     setIsLoading(true);
     setPageError(null);
     try {
-      const pdf = new jsPDF({
-        unit: 'mm',
-        format: 'a4'
-      });
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10;
-      const qrSize = 40;
-      const textHeight = 10;
-      const itemsPerRow = 2;
-      const itemsPerPage = 8; // 2 columns x 4 rows
-      let x = margin;
-      let y = margin;
-      let itemCount = 0;
-
-      // Alternative QR code generation using canvas element
-      const generateQRCodeDataUrl = (text: string): Promise<string> => {
-        return new Promise((resolve, reject) => {
-          const canvas = document.createElement('canvas');
-          import('qrcode').then(QRCodeLib => {
-            QRCodeLib.toCanvas(canvas, text, { margin: 1, width: 128 }, (error: any) => {
-              if (error) reject(error);
-              else resolve(canvas.toDataURL('image/png'));
-            });
-          }).catch(reject);
-        });
-      };
-
-      for (let i = 0; i < students.length; i++) {
-        const student = students[i];
+      // Import QRCode and JSZip
+      const QRCodeLib = await import('qrcode');
+      const JSZip = (await import('jszip')).default;
+      // Prepare data and images
+      const zip = new JSZip();
+      const imagesFolder = zip.folder('qr-images');
+      const data = await Promise.all(students.map(async (student) => {
         const qrData = generateQRData(student);
-        const qrImageDataUrl = await generateQRCodeDataUrl(qrData);
-
-        // Add QR code image
-        pdf.addImage(qrImageDataUrl, 'PNG', x, y, qrSize, qrSize);
-
-        // Add student name and NIM below QR code, centered under QR code
-        pdf.setFontSize(10);
-        const centerX = x + qrSize / 2;
-        pdf.text(student.name, centerX, y + qrSize + 5, { maxWidth: qrSize, align: 'center' });
-        pdf.text(student.nis, centerX, y + qrSize + 12, { maxWidth: qrSize, align: 'center' });
-
-        itemCount++;
-        if (itemCount % itemsPerRow === 0) {
-          x = margin;
-          y += qrSize + textHeight + 15;
-        } else {
-          x += (pageWidth - 2 * margin) / itemsPerRow;
-        }
-
-        if (itemCount === itemsPerPage) {
-          if (i !== students.length - 1) {
-            pdf.addPage();
-            x = margin;
-            y = margin;
-            itemCount = 0;
-          }
-        }
-      }
-
-      pdf.save('qr-codes-all-students.pdf');
+        // Generate QR code PNG as base64
+        const qrPngDataUrl = await QRCodeLib.toDataURL(qrData, { margin: 1, width: 256 });
+        // Extract base64 from DataURL
+        const base64 = qrPngDataUrl.split(',')[1];
+        // Save PNG to zip
+        const fileName = `${student.nis}_${student.name.replace(/\s+/g, '_')}.png`;
+        imagesFolder.file(fileName, base64, { base64: true });
+        // Return row for Excel
+        return {
+          NIS: student.nis,
+          Nama: student.name,
+          Kelas: student.class,
+          Gender: student.gender === 'L' ? 'Laki-laki' : 'Perempuan',
+          'Tanggal Lahir': student.birth_date,
+          'Nama Orang Tua': student.parent_name,
+          'QR Code (PNG)': `qr-images/${fileName}`
+        };
+      }));
+      // Create worksheet and workbook
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'QR Siswa');
+      // Export to XLSX file (as blob)
+      const xlsxBlob = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      zip.file('qr-codes-all-students.xlsx', xlsxBlob);
+      // Generate ZIP and trigger download
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'qr-codes-all-students.zip';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 1000);
     } catch (error: any) {
-      console.error("Error exporting QR codes to PDF:", error);
-      setPageError("Gagal mengekspor QR Code ke PDF.");
+      console.error("Error exporting QR codes to ZIP:", error);
+      setPageError("Gagal mengekspor QR Code ke ZIP.");
     } finally {
       setIsLoading(false);
     }
@@ -467,23 +476,81 @@ const StudentsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Manajemen Siswa</h1>
-        <div className="flex space-x-2">
-          {/* Tombol Ketentuan Impor */}
+      {/* Modal Alert untuk Error Import Siswa */}
+      {importError && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+          <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6 flex flex-col items-center animate-slide-up">
+            <AlertCircle className="h-12 w-12 text-red-500 mb-2" />
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Gagal Impor Siswa</h2>
+            <p className="text-center text-gray-700 mb-4">{importError}</p>
+            <button
+              className="btn-primary w-full"
+              onClick={() => setImportError(null)}
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      )}
+      <div className="mb-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2 sm:mb-0">Manajemen Siswa</h1>
+          {/* Tombol versi web (desktop/tablet) */}
+          <div className="hidden sm:flex space-x-2">
+            <button
+              onClick={() => setShowGuidelinesModal(true)}
+              className="btn-outline flex items-center text-gray-600 hover:text-gray-900"
+            >
+              <Info className="h-5 w-5 mr-1" />
+              Ketentuan Impor
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="btn-outline flex items-center"
+            >
+              <Upload className="h-5 w-5 mr-1" />
+              Import Excel
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept=".xlsx, .xls"
+              className="hidden"
+            />
+            <button
+              onClick={exportAllQRCodesToXLSX}
+              className="btn-outline flex items-center ml-2"
+              disabled={isLoading || students.length === 0}
+              title="Export Semua QR Code ke XLSX"
+            >
+              Export QR Codes
+            </button>
+            <button
+              onClick={() => setShowForm(true)}
+              className="btn-primary flex items-center"
+            >
+              <Plus className="h-5 w-5 mr-1" />
+              Tambah Siswa
+            </button>
+          </div>
+        </div>
+        {/* Tombol versi mobile */}
+        <div className="flex flex-wrap gap-2 mt-3 sm:hidden">
           <button
             onClick={() => setShowGuidelinesModal(true)}
-            className="btn-outline flex items-center text-gray-600 hover:text-gray-900"
+            className="btn-outline flex items-center text-gray-600 hover:text-gray-900 px-2 py-1 text-xs rounded"
+            style={{ minWidth: 0 }}
           >
-            <Info className="h-5 w-5 mr-1" />
+            <Info className="h-4 w-4 mr-1" />
             Ketentuan Impor
           </button>
-          {/* Tombol Import Excel */}
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="btn-outline flex items-center"
+            className="btn-outline flex items-center px-2 py-1 text-xs rounded"
+            style={{ minWidth: 0 }}
           >
-            <Upload className="h-5 w-5 mr-1" />
+            <Upload className="h-4 w-4 mr-1" />
             Import Excel
           </button>
           <input
@@ -493,20 +560,21 @@ const StudentsPage: React.FC = () => {
             accept=".xlsx, .xls"
             className="hidden"
           />
-          {/* Tombol Tambah Siswa */}
           <button
-            onClick={exportAllQRCodesToPDF}
-            className="btn-outline flex items-center ml-2"
+            onClick={exportAllQRCodesToXLSX}
+            className="btn-outline flex items-center px-2 py-1 text-xs rounded"
             disabled={isLoading || students.length === 0}
-            title="Export Semua QR Code ke PDF"
+            title="Export Semua QR Code ke XLSX"
+            style={{ minWidth: 0 }}
           >
             Export QR Codes
           </button>
           <button
             onClick={() => setShowForm(true)}
-            className="btn-primary flex items-center"
+            className="btn-primary flex items-center px-2 py-1 text-xs rounded"
+            style={{ minWidth: 0 }}
           >
-            <Plus className="h-5 w-5 mr-1" />
+            <Plus className="h-4 w-4 mr-1" />
             Tambah Siswa
           </button>
         </div>
@@ -521,9 +589,9 @@ const StudentsPage: React.FC = () => {
 
       {/* Ini Wajib Kamu Ingat! (Penggunaan Komponen StudentTable) */}
       <StudentTable 
-        students={sortedStudents} 
+        students={pagedStudents}
         isLoading={isLoading}
-        error={pageError} 
+        error={pageError}
         onEdit={handleEdit}
         onDeleteConfirmation={handleDeleteConfirmation}
         onShowQR={id => { 
@@ -531,10 +599,17 @@ const StudentsPage: React.FC = () => {
           if (studentFound) {
             setQrStudentData(studentFound); 
           }
-        }} 
+        }}
         searchTerm={searchTerm}
-        sortConfig={sortConfig} 
-        onSort={handleSort} 
+        sortConfig={sortConfig}
+        onSort={handleSort}
+        columnFilters={columnFilters}
+        onColumnFilterChange={handleColumnFilterChange}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        totalRows={sortedStudents.length}
+        onPageChange={handlePageChange}
+        onRowsPerPageChange={handleRowsPerPageChange}
       />
 
       {/* Ini Wajib Kamu Ingat! (Penggunaan Komponen StudentFormModal) */}
