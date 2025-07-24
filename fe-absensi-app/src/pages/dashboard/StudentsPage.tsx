@@ -393,7 +393,7 @@ const StudentsPage: React.FC = () => {
     });
   };
 
-  const exportAllQRCodesToPDF = useCallback(async () => {
+  const exportAllQRCodesToXLSX = useCallback(async () => {
     if (students.length === 0) {
       setPageError("Tidak ada data siswa untuk diekspor.");
       return;
@@ -401,70 +401,54 @@ const StudentsPage: React.FC = () => {
     setIsLoading(true);
     setPageError(null);
     try {
-      const pdf = new jsPDF({
-        unit: 'mm',
-        format: 'a4'
-      });
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10;
-      const qrSize = 40;
-      const textHeight = 10;
-      const itemsPerRow = 2;
-      const itemsPerPage = 8; // 2 columns x 4 rows
-      let x = margin;
-      let y = margin;
-      let itemCount = 0;
-
-      // Alternative QR code generation using canvas element
-      const generateQRCodeDataUrl = (text: string): Promise<string> => {
-        return new Promise((resolve, reject) => {
-          const canvas = document.createElement('canvas');
-          import('qrcode').then(QRCodeLib => {
-            QRCodeLib.toCanvas(canvas, text, { margin: 1, width: 128 }, (error: any) => {
-              if (error) reject(error);
-              else resolve(canvas.toDataURL('image/png'));
-            });
-          }).catch(reject);
-        });
-      };
-
-      for (let i = 0; i < students.length; i++) {
-        const student = students[i];
+      // Import QRCode and JSZip
+      const QRCodeLib = await import('qrcode');
+      const JSZip = (await import('jszip')).default;
+      // Prepare data and images
+      const zip = new JSZip();
+      const imagesFolder = zip.folder('qr-images');
+      const data = await Promise.all(students.map(async (student) => {
         const qrData = generateQRData(student);
-        const qrImageDataUrl = await generateQRCodeDataUrl(qrData);
-
-        // Add QR code image
-        pdf.addImage(qrImageDataUrl, 'PNG', x, y, qrSize, qrSize);
-
-        // Add student name and NIM below QR code, centered under QR code
-        pdf.setFontSize(10);
-        const centerX = x + qrSize / 2;
-        pdf.text(student.name, centerX, y + qrSize + 5, { maxWidth: qrSize, align: 'center' });
-        pdf.text(student.nis, centerX, y + qrSize + 12, { maxWidth: qrSize, align: 'center' });
-
-        itemCount++;
-        if (itemCount % itemsPerRow === 0) {
-          x = margin;
-          y += qrSize + textHeight + 15;
-        } else {
-          x += (pageWidth - 2 * margin) / itemsPerRow;
-        }
-
-        if (itemCount === itemsPerPage) {
-          if (i !== students.length - 1) {
-            pdf.addPage();
-            x = margin;
-            y = margin;
-            itemCount = 0;
-          }
-        }
-      }
-
-      pdf.save('qr-codes-all-students.pdf');
+        // Generate QR code PNG as base64
+        const qrPngDataUrl = await QRCodeLib.toDataURL(qrData, { margin: 1, width: 256 });
+        // Extract base64 from DataURL
+        const base64 = qrPngDataUrl.split(',')[1];
+        // Save PNG to zip
+        const fileName = `${student.nis}_${student.name.replace(/\s+/g, '_')}.png`;
+        imagesFolder.file(fileName, base64, { base64: true });
+        // Return row for Excel
+        return {
+          NIS: student.nis,
+          Nama: student.name,
+          Kelas: student.class,
+          Gender: student.gender === 'L' ? 'Laki-laki' : 'Perempuan',
+          'Tanggal Lahir': student.birth_date,
+          'Nama Orang Tua': student.parent_name,
+          'QR Code (PNG)': `qr-images/${fileName}`
+        };
+      }));
+      // Create worksheet and workbook
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'QR Siswa');
+      // Export to XLSX file (as blob)
+      const xlsxBlob = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      zip.file('qr-codes-all-students.xlsx', xlsxBlob);
+      // Generate ZIP and trigger download
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'qr-codes-all-students.zip';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 1000);
     } catch (error: any) {
-      console.error("Error exporting QR codes to PDF:", error);
-      setPageError("Gagal mengekspor QR Code ke PDF.");
+      console.error("Error exporting QR codes to ZIP:", error);
+      setPageError("Gagal mengekspor QR Code ke ZIP.");
     } finally {
       setIsLoading(false);
     }
@@ -535,10 +519,10 @@ const StudentsPage: React.FC = () => {
               className="hidden"
             />
             <button
-              onClick={exportAllQRCodesToPDF}
+              onClick={exportAllQRCodesToXLSX}
               className="btn-outline flex items-center ml-2"
               disabled={isLoading || students.length === 0}
-              title="Export Semua QR Code ke PDF"
+              title="Export Semua QR Code ke XLSX"
             >
               Export QR Codes
             </button>
@@ -577,10 +561,10 @@ const StudentsPage: React.FC = () => {
             className="hidden"
           />
           <button
-            onClick={exportAllQRCodesToPDF}
+            onClick={exportAllQRCodesToXLSX}
             className="btn-outline flex items-center px-2 py-1 text-xs rounded"
             disabled={isLoading || students.length === 0}
-            title="Export Semua QR Code ke PDF"
+            title="Export Semua QR Code ke XLSX"
             style={{ minWidth: 0 }}
           >
             Export QR Codes
