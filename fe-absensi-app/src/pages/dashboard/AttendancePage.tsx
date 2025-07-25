@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
+// @ts-ignore
+import { ChevronDownIcon } from '@heroicons/react/20/solid';
+// @ts-ignore
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, Download, Filter, Search, Users, RefreshCw, X, AlertCircle } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react'; 
+import { Calendar, Download, Search, Users, RefreshCw, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
 import axios from 'axios';
@@ -30,7 +33,7 @@ interface StudentAttendanceStatus {
 
 const AttendancePage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, hasPermission } = useAuth();
+  const { hasPermission } = useAuth();
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [studentsAttendance, setStudentsAttendance] = useState<StudentAttendanceStatus[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,8 +44,8 @@ const AttendancePage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Ini Wajib Kamu Ingat! (State Baru untuk Daftar Kelas Dinamis)
-  const [classes, setClasses] = useState<ClassItem[]>([]); // Untuk menyimpan daftar kelas dari backend
+
+  const [classes, setClasses] = useState<ClassItem[]>([]); 
 
   // Fungsi untuk memuat status absensi siswa per kelas dan tanggal dari backend
   const loadStudentAttendance = useCallback(async (className: string, date: string) => {
@@ -164,22 +167,24 @@ const AttendancePage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-gray-900">Absensi Siswa</h1>
-        
-        <div className="flex items-center">
-          <div className="relative mr-4">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Calendar className="h-5 w-5 text-gray-400" />
-            </div>
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
+            Absensi Siswa
+          </h1>
+          <div className="relative w-full sm:w-auto">
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+              className="pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 w-full sm:w-[180px] min-w-[140px]"
             />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <Calendar className="h-5 w-5" />
+            </span>
           </div>
-          
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           {selectedClass && (
             <button
               onClick={() => {
@@ -189,13 +194,13 @@ const AttendancePage: React.FC = () => {
                   setActiveTab('list');
                 }
               }}
-              className="btn-primary"
+              className="bg-primary-600 hover:bg-primary-700 text-white font-semibold px-4 py-2 rounded-lg shadow transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               {activeTab === 'list' ? 'Mode QR Code' : 'Mode Daftar'}
             </button>
           )}
         </div>
-      </div>
+      </header>
       
       {error && (
         <div className="bg-error-50 text-error-700 p-4 rounded-lg flex items-start">
@@ -205,32 +210,54 @@ const AttendancePage: React.FC = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Class List */}
-        <div className="md:col-span-1">
-          <div className="card overflow-hidden">
-            <div className="p-4 border-b border-gray-200 bg-gray-50">
-              <h2 className="text-lg font-medium text-gray-900">Daftar Kelas</h2>
-            </div>
-            <div className="divide-y divide-gray-200">
+        {/* Class List: Dropdown di mobile, sidebar di desktop */}
+        <aside className="md:col-span-1" aria-label="Daftar Kelas">
+          <section className="card overflow-hidden">
+            <header className="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+              <h2 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary-500" />
+                Daftar Kelas
+              </h2>
+              {/* Dropdown di mobile dengan Menu */}
+              <nav className="md:hidden" aria-label="Pilih Kelas">
+                <label htmlFor="kelas-dropdown" className="sr-only">Pilih Kelas</label>
+                <select
+                  id="kelas-dropdown"
+                  className="border rounded px-3 py-2 text-sm focus:ring-primary-500 focus:border-primary-500 w-full"
+                  value={selectedClass || ''}
+                  onChange={e => handleClassSelect(e.target.value)}
+                  disabled={classes.length === 0}
+                >
+                  <option value="" disabled>Pilih Kelas...</option>
+                  {classes.map(classItem => (
+                    <option key={classItem.id} value={classItem.name}>
+                      {classItem.name} {classItem.homeroom_teacher_name ? `- ${classItem.homeroom_teacher_name}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </nav>
+            </header>
+            {/* Sidebar di desktop */}
+            <nav className="hidden md:block divide-y divide-gray-200" aria-label="Sidebar Kelas">
               {classes.length === 0 ? (
                 <div className="p-4 text-center text-gray-500 text-sm">Tidak ada kelas yang terdaftar.</div>
               ) : (
-                classes.map((classItem) => ( // Menggunakan `classes` state
+                classes.map((classItem) => (
                   <button
                     key={classItem.id}
-                    className={`w-full text-left p-4 hover:bg-gray-50 transition ${
-                      selectedClass === classItem.name ? 'bg-primary-50' : '' // Bandingkan dengan class.name
-                    }`}
-                    onClick={() => handleClassSelect(classItem.name)} // Mengirim class.name sebagai ID yang dipilih
+                    className={`w-full text-left p-4 flex items-center gap-3 hover:bg-primary-50 transition-all duration-150`}
+                    onClick={() => handleClassSelect(classItem.name)}
                   >
-                    <div className="font-medium text-gray-900">Kelas {classItem.name}</div>
-                    <div className="text-sm text-gray-500">{classItem.homeroom_teacher_name || '-'}</div>
+                    <div>
+                      <div className="font-medium text-gray-900">Kelas {classItem.name}</div>
+                      <div className="text-xs text-gray-500">{classItem.homeroom_teacher_name || '-'}</div>
+                    </div>
                   </button>
                 ))
               )}
-            </div>
-          </div>
-        </div>
+            </nav>
+          </section>
+        </aside>
         
         {/* Student List or QR Code */}
         <div className="md:col-span-3">

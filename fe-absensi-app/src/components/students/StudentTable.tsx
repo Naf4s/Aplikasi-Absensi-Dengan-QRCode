@@ -147,6 +147,7 @@ const StudentTable: React.FC<StudentTableProps> = ({
               <td className="px-6 py-2">
                 <input type="text" className="w-full border rounded px-2 py-1 text-xs" placeholder="Cari Orang Tua" value={columnFilters.parent_name || ''} onChange={e => onColumnFilterChange('parent_name', e.target.value)} />
               </td>
+              
               <td headers="aksi-header"></td>
             </tr>
           </thead>
