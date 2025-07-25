@@ -4,7 +4,7 @@ import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 // @ts-ignore
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Download, Search, Users, RefreshCw, AlertCircle } from 'lucide-react';
+import { Calendar, Search, Users, RefreshCw, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
 import axios from 'axios';
@@ -275,91 +275,84 @@ const AttendancePage: React.FC = () => {
             </div>
           ) : activeTab === 'list' ? (
             <div className="card overflow-hidden">
-              <div className="p-4 bg-white border-b border-gray-200 flex justify-between items-center">
-                <h2 className="text-lg font-medium text-gray-900">
-                  Siswa Kelas {selectedClass}
-                </h2>
-                
-                <div className="flex items-center space-x-2">
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Search className="h-4 w-4 text-gray-400" />
+
+              <div className="p-4 bg-white border-b border-gray-200">
+                {/* Mobile: title + buttons inline, search below. Desktop: horizontal layout. */}
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  {/* Title and buttons row */}
+                  <div className="flex flex-row items-center justify-between w-full">
+                    <h2 className="text-lg font-bold text-gray-900 mb-1 flex items-center">Siswa Kelas <span className="text-primary-600 ml-1">{selectedClass}</span></h2>
+                    <div className="flex flex-row gap-2 items-center">
+                      <button
+                        className="p-2 rounded-lg bg-gray-100 hover:bg-primary-50 text-gray-500 hover:text-primary-600 transition"
+                        onClick={() => navigate('/dashboard/reports')}
+                        title="Lihat Laporan"
+                      >
+                        Lihat Laporan
+                      </button>
+                      <button 
+                        className="p-2 rounded-lg bg-gray-100 hover:bg-primary-50 text-gray-500 hover:text-primary-600 transition"
+                        onClick={() => selectedClass && loadStudentAttendance(selectedClass, selectedDate)}
+                        title="Refresh Data"
+                      >
+                        <RefreshCw className="h-5 w-5" />
+                      </button>
                     </div>
+                  </div>
+                  {/* Search input below for mobile, right for desktop */}
+                  <div className="relative w-full sm:w-auto">
                     <input
                       type="text"
                       placeholder="Cari siswa..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-9 pr-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-primary-500 focus:border-primary-500"
+                      className="pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary-500 focus:border-primary-500 w-full"
                     />
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                      <Search className="h-4 w-4" />
+                    </span>
                   </div>
-                  
-                  {/* <button className="p-1 text-gray-500 hover:text-gray-700">
-                    <Filter className="h-5 w-5" />
-                  </button> */}
-                  
-                  <button className="p-1 text-gray-500 hover:text-gray-700">
-                    <Download className="h-5 w-5" />
-                  </button>
-                  
-                  <button 
-                    className="p-1 text-gray-500 hover:text-gray-700"
-                    onClick={() => selectedClass && loadStudentAttendance(selectedClass, selectedDate)}
-                  >
-                    <RefreshCw className="h-5 w-5" />
-                  </button>
                 </div>
               </div>
               
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+              <div className="w-full overflow-x-auto">
+                <table className="min-w-[700px] w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50 sticky top-0 z-10">
                     <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        No
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        NIS
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Nama
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Jam Masuk
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Keterangan
-                      </th>
+                      <th scope="col" className="px-2 py-2 sm:px-4 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[40px]">No</th>
+                      <th scope="col" className="px-2 py-2 sm:px-4 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[60px]">NIS</th>
+                      <th scope="col" className="px-2 py-2 sm:px-4 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[140px]">Nama</th>
+                      <th scope="col" className="px-2 py-2 sm:px-4 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[80px]">Status</th>
+                      <th scope="col" className="px-2 py-2 sm:px-4 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[90px]">Jam Masuk</th>
+                      <th scope="col" className="px-2 py-2 sm:px-4 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[120px]">Keterangan</th>
                       {hasPermission('mark_attendance') && (
-                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Aksi
-                        </th>
+                        <th scope="col" className="px-2 py-2 sm:px-4 sm:py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[80px]">Aksi</th>
                       )}
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredStudents.length === 0 ? (
                       <tr>
-                        <td colSpan={hasPermission('mark_attendance') ? 7 : 6} className="px-6 py-4 text-center text-sm text-gray-500">
-                          Tidak ada data siswa untuk kelas ini atau tanggal ini.
+                        <td colSpan={hasPermission('mark_attendance') ? 7 : 6} className="px-6 py-10 text-center text-sm text-gray-500">
+                          <div className="flex flex-col items-center justify-center">
+                            <AlertCircle className="h-10 w-10 text-gray-300 mb-2" />
+                            <span className="font-semibold">Tidak ada data siswa untuk kelas ini atau tanggal ini.</span>
+                            <button
+                              className="mt-4 px-4 py-2 rounded bg-primary-600 text-white hover:bg-primary-700 transition"
+                              onClick={() => selectedClass && loadStudentAttendance(selectedClass, selectedDate)}
+                            >
+                              Refresh Data
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ) : (
                       filteredStudents.map((student, index) => (
-                        <tr key={student.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {index + 1}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {student.nis}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {student.name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                        <tr key={student.id} className="hover:bg-primary-50 transition-all duration-150 border-b border-gray-100">
+                          <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
+                          <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-sm font-medium text-gray-900">{student.nis}</td>
+                          <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-sm text-gray-900">{student.name}</td>
+                          <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap">
                             <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(student.status)}`}>
                               {student.status === 'present' ? 'Hadir' : 
                                student.status === 'absent' ? 'Tanpa Keterangan' : 
@@ -367,50 +360,50 @@ const AttendancePage: React.FC = () => {
                                student.status === 'permit' ? 'Izin' : 'Belum Absen'}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {student.timeIn || '-'}
+                          <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-sm text-gray-500">{student.timeIn || '-'}</td>
+                          <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-sm text-gray-500">
+                            {(() => {
+                              if (student.status === 'present') {
+                                return student.timeIn && student.timeIn > '07:30:00' ? '⏰ Terlambat' : '✅ Hadir Tepat Waktu';
+                              } else if (student.status === 'absent') {
+                                return '❌ Tanpa Keterangan';
+                              } else if (student.status === 'sick') {
+                                return student.notes ? `🤒 Sakit - ${student.notes}` : '🤒 Sakit';
+                              } else if (student.status === 'permit') {
+                                return student.notes ? `📄 Izin - ${student.notes}` : '📄 Izin';
+                              } else {
+                                return '-';
+                              }
+                            })()}
                           </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {(() => {
-                            if (student.status === 'present') {
-                              return student.timeIn && student.timeIn > '07:30:00' ? '⏰ Terlambat' : '✅ Hadir Tepat Waktu';
-                            } else if (student.status === 'absent') {
-                              return '❌ Tanpa Keterangan';
-                            } else if (student.status === 'sick') {
-                              return student.notes ? `🤒 Sakit - ${student.notes}` : '🤒 Sakit';
-                            } else if (student.status === 'permit') {
-                              return student.notes ? `📄 Izin - ${student.notes}` : '📄 Izin';
-                            } else {
-                              return '-';
-                            }
-                          })()}
-                        </td>
-
-
                           {hasPermission('mark_attendance') && (
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-right text-sm font-medium">
                               <div className="flex justify-end space-x-2">
                                 <button 
                                   onClick={() => updateStudentStatus(student.id, 'present')}
                                   className={`px-2 py-1 text-xs rounded ${student.status === 'present' ? 'bg-success-100 text-success-700' : 'bg-gray-100 text-gray-700 hover:bg-success-50 hover:text-success-700'}`}
+                                  aria-label="Tandai Hadir"
                                 >
                                   H
                                 </button>
                                 <button 
                                   onClick={() => updateStudentStatus(student.id, 'absent')}
                                   className={`px-2 py-1 text-xs rounded ${student.status === 'absent' ? 'bg-error-100 text-error-700' : 'bg-gray-100 text-gray-700 hover:bg-error-50 hover:text-error-700'}`}
+                                  aria-label="Tandai Tanpa Keterangan"
                                 >
                                   A
                                 </button>
                                 <button 
                                   onClick={() => updateStudentStatus(student.id, 'sick')}
                                   className={`px-2 py-1 text-xs rounded ${student.status === 'sick' ? 'bg-warning-100 text-warning-700' : 'bg-gray-100 text-gray-700 hover:bg-warning-50 hover:text-warning-700'}`}
+                                  aria-label="Tandai Sakit"
                                 >
                                   S
                                 </button>
                                 <button 
                                   onClick={() => updateStudentStatus(student.id, 'permit')}
                                   className={`px-2 py-1 text-xs rounded ${student.status === 'permit' ? 'bg-accent-100 text-accent-700' : 'bg-gray-100 text-gray-700 hover:bg-accent-50 hover:text-accent-700'}`}
+                                  aria-label="Tandai Izin"
                                 >
                                   I
                                 </button>
@@ -424,28 +417,31 @@ const AttendancePage: React.FC = () => {
                 </table>
               </div>
               
-              <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
-                <div className="text-sm text-gray-500">
-                  Menampilkan {filteredStudents.length} dari {studentsAttendance.length} siswa
+              <div className="p-4 border-t border-gray-200 bg-gray-50 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                <div className="text-sm text-gray-500 mb-2 sm:mb-0">
+                  Menampilkan <span className="font-semibold text-gray-900">{filteredStudents.length}</span> dari <span className="font-semibold text-gray-900">{studentsAttendance.length}</span> siswa
                 </div>
-                
-                <div className="flex space-x-2 text-sm">
-                  <span className="text-success-700 bg-success-50 px-2 py-1 rounded-md flex items-center">
-                    <div className="h-2 w-2 rounded-full bg-success-500 mr-1"></div>
-                    Hadir: {studentsAttendance.filter(s => s.status === 'present').length}
-                  </span>
-                  <span className="text-error-700 bg-error-50 px-2 py-1 rounded-md flex items-center">
-                    <div className="h-2 w-2 rounded-full bg-error-500 mr-1"></div>
-                    Tanpa Keterangan: {studentsAttendance.filter(s => s.status === 'absent').length}
-                  </span>
-                  <span className="text-warning-700 bg-warning-50 px-2 py-1 rounded-md flex items-center">
-                    <div className="h-2 w-2 rounded-full bg-warning-500 mr-1"></div>
-                    Sakit: {studentsAttendance.filter(s => s.status === 'sick').length}
-                  </span>
-                  <span className="text-accent-700 bg-accent-50 px-2 py-1 rounded-md flex items-center">
-                    <div className="h-2 w-2 rounded-full bg-accent-500 mr-1"></div>
-                    Izin: {studentsAttendance.filter(s => s.status === 'permit').length}
-                  </span>
+                <div className="flex flex-wrap gap-2">
+                  <div className="flex items-center px-3 py-2 rounded-lg bg-success-50 border border-success-100 min-w-[90px]">
+                    <span className="h-2 w-2 rounded-full bg-success-500 mr-2"></span>
+                    <span className="font-semibold text-success-700">Hadir:</span>
+                    <span className="ml-2 text-success-700 font-bold">{studentsAttendance.filter(s => s.status === 'present').length}</span>
+                  </div>
+                  <div className="flex items-center px-3 py-2 rounded-lg bg-error-50 border border-error-100 min-w-[90px]">
+                    <span className="h-2 w-2 rounded-full bg-error-500 mr-2"></span>
+                    <span className="font-semibold text-error-700">Tanpa Keterangan:</span>
+                    <span className="ml-2 text-error-700 font-bold">{studentsAttendance.filter(s => s.status === 'absent').length}</span>
+                  </div>
+                  <div className="flex items-center px-3 py-2 rounded-lg bg-warning-50 border border-warning-100 min-w-[70px]">
+                    <span className="h-2 w-2 rounded-full bg-warning-500 mr-2"></span>
+                    <span className="font-semibold text-warning-700">Sakit:</span>
+                    <span className="ml-2 text-warning-700 font-bold">{studentsAttendance.filter(s => s.status === 'sick').length}</span>
+                  </div>
+                  <div className="flex items-center px-3 py-2 rounded-lg bg-accent-50 border border-accent-100 min-w-[70px]">
+                    <span className="h-2 w-2 rounded-full bg-accent-500 mr-2"></span>
+                    <span className="font-semibold text-accent-700">Izin:</span>
+                    <span className="ml-2 text-accent-700 font-bold">{studentsAttendance.filter(s => s.status === 'permit').length}</span>
+                  </div>
                 </div>
               </div>
             </div>
