@@ -90,6 +90,10 @@ const StudentsPage: React.FC = () => {
   const [showGuidelinesModal, setShowGuidelinesModal] = useState(false);
 
   const [classes, setClasses] = useState<ClassItem[]>([]); 
+  // State untuk filter kelas pada ekspor massal (pindah ke modal)
+  const [selectedClassExport, setSelectedClassExport] = useState<string>('');
+  // State untuk kontrol dialog export QR
+  const [showExportQrDialog, setShowExportQrDialog] = useState(false);
   // --- END: DEKLARASI SEMUA STATE DAN REF ---
 
   const resetForm = useCallback(() => { 
@@ -393,30 +397,28 @@ const StudentsPage: React.FC = () => {
     });
   };
 
-  const exportAllQRCodesToXLSX = useCallback(async () => {
-    if (students.length === 0) {
-      setPageError("Tidak ada data siswa untuk diekspor.");
+  // Fungsi untuk ekspor QR Codes, dipanggil dari modal
+  const exportAllQRCodesToXLSX = useCallback(async (className: string) => {
+    const studentsToExport = className
+      ? students.filter(s => s.class === className)
+      : students;
+    if (studentsToExport.length === 0) {
+      setPageError(className ? `Tidak ada data siswa untuk kelas ${className}.` : "Tidak ada data siswa untuk diekspor.");
       return;
     }
     setIsLoading(true);
     setPageError(null);
     try {
-      // Import QRCode and JSZip
       const QRCodeLib = await import('qrcode');
       const JSZip = (await import('jszip')).default;
-      // Prepare data and images
       const zip = new JSZip();
       const imagesFolder = zip.folder('qr-images');
-      const data = await Promise.all(students.map(async (student) => {
+      const data = await Promise.all(studentsToExport.map(async (student) => {
         const qrData = generateQRData(student);
-        // Generate QR code PNG as base64
         const qrPngDataUrl = await QRCodeLib.toDataURL(qrData, { margin: 1, width: 256 });
-        // Extract base64 from DataURL
         const base64 = qrPngDataUrl.split(',')[1];
-        // Save PNG to zip
         const fileName = `${student.nis}_${student.name.replace(/\s+/g, '_')}.png`;
         imagesFolder.file(fileName, base64, { base64: true });
-        // Return row for Excel
         return {
           NIS: student.nis,
           Nama: student.name,
@@ -427,19 +429,18 @@ const StudentsPage: React.FC = () => {
           'QR Code (PNG)': `qr-images/${fileName}`
         };
       }));
-      // Create worksheet and workbook
       const worksheet = XLSX.utils.json_to_sheet(data);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'QR Siswa');
-      // Export to XLSX file (as blob)
       const xlsxBlob = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
       zip.file('qr-codes-all-students.xlsx', xlsxBlob);
-      // Generate ZIP and trigger download
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       const url = URL.createObjectURL(zipBlob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'qr-codes-all-students.zip';
+      a.download = className
+        ? `qr-codes-${className.replace(/\s+/g, '_')}.zip`
+        : 'qr-codes-all-students.zip';
       document.body.appendChild(a);
       a.click();
       setTimeout(() => {
@@ -451,6 +452,7 @@ const StudentsPage: React.FC = () => {
       setPageError("Gagal mengekspor QR Code ke ZIP.");
     } finally {
       setIsLoading(false);
+      setShowExportQrDialog(false);
     }
   }, [students, setPageError, setIsLoading]);
   // --- END: Deklarasi Semua Fungsi ---
@@ -496,7 +498,7 @@ const StudentsPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-2xl font-bold text-gray-900 mb-2 sm:mb-0">Manajemen Siswa</h1>
           {/* Tombol versi web (desktop/tablet) */}
-          <div className="hidden sm:flex space-x-2">
+          <div className="hidden sm:flex space-x-2 items-center">
             <button
               onClick={() => setShowGuidelinesModal(true)}
               className="btn-outline flex items-center text-gray-600 hover:text-gray-900"
@@ -519,7 +521,7 @@ const StudentsPage: React.FC = () => {
               className="hidden"
             />
             <button
-              onClick={exportAllQRCodesToXLSX}
+              onClick={() => setShowExportQrDialog(true)}
               className="btn-outline flex items-center ml-2"
               disabled={isLoading || students.length === 0}
               title="Export Semua QR Code ke XLSX"
@@ -534,6 +536,38 @@ const StudentsPage: React.FC = () => {
               Tambah Siswa
             </button>
           </div>
+      {/* Modal untuk memilih kelas sebelum ekspor QR Code */}
+      {showExportQrDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+          <div className="bg-white rounded-lg shadow-xl max-w-xs w-full p-6 flex flex-col items-center animate-slide-up">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Export QR Codes</h2>
+            <label htmlFor="select-class-export" className="mb-2 text-sm text-gray-700 w-full">Pilih Kelas</label>
+            <select
+              id="select-class-export"
+              className="border rounded px-2 py-1 mb-4 w-full"
+              value={selectedClassExport}
+              onChange={e => setSelectedClassExport(e.target.value)}
+            >
+              <option value="">Semua Kelas</option>
+              {classes.map(cls => (
+                <option key={cls.id} value={cls.name}>{cls.name}</option>
+              ))}
+            </select>
+            <div className="flex w-full gap-2">
+              <button
+                className="btn-outline flex-1"
+                onClick={() => setShowExportQrDialog(false)}
+                disabled={isLoading}
+              >Batal</button>
+              <button
+                className="btn-primary flex-1"
+                onClick={() => exportAllQRCodesToXLSX(selectedClassExport)}
+                disabled={isLoading || students.length === 0}
+              >Export</button>
+            </div>
+          </div>
+        </div>
+      )}
         </div>
         {/* Tombol versi mobile */}
         <div className="flex flex-wrap gap-2 mt-3 sm:hidden">
