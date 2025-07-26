@@ -125,7 +125,7 @@ const ScannerPage: React.FC = () => {
     const newScanner = new Html5QrcodeScanner(
       'qr-reader',
       {
-        fps: 10,
+        fps: 30,
         qrbox: { width: qrboxSize, height: qrboxSize },
         rememberLastUsedCamera: true,
       },
