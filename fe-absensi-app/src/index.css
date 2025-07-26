@@ -1,3 +1,4 @@
+@import './styles/html5qrcode-custom.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
