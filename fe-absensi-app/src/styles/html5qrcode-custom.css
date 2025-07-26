@@ -1,0 +1,42 @@
+/* Custom style for html5-qrcode buttons and UI */
+#qr-reader__dashboard_section button,
+#qr-reader__camera_permission_button,
+#qr-reader__image_tab_button,
+#qr-reader__file_selection_button {
+  background-color: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.08);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+#qr-reader__dashboard_section button:hover,
+#qr-reader__camera_permission_button:hover,
+#qr-reader__image_tab_button:hover,
+#qr-reader__file_selection_button:hover {
+  background-color: #1d4ed8;
+  box-shadow: 0 4px 12px rgba(37,99,235,0.15);
+}
+#qr-reader__dashboard_section button:active,
+#qr-reader__camera_permission_button:active,
+#qr-reader__image_tab_button:active,
+#qr-reader__file_selection_button:active {
+  background-color: #1e40af;
+}
+#qr-reader__dashboard_section button:focus,
+#qr-reader__camera_permission_button:focus,
+#qr-reader__image_tab_button:focus,
+#qr-reader__file_selection_button:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+/* Optional: Make dashboard section background softer */
+#qr-reader__dashboard_section {
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+}
