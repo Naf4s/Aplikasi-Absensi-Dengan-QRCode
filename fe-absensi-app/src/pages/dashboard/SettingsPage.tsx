@@ -1,15 +1,27 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { AlertCircle, CheckCircle } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import AcademicYearForm from '../../components/settings/AcademicYearForm';
+import { useAuth } from '../../contexts/AuthContext';
 
 const SettingsPage = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [emailNotifications, setEmailNotifications] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-  const [message, setMessage] = useState('');
+  const { hasPermission } = useAuth();
+  const [pageError, setPageError] = useState<string | null>(null);
+  const [pageMessage, setPageMessage] = useState<string | null>(null);
 
   const [qr, setQr] = useState<string | null>(null);
   const [isReady, setIsReady] = useState(false);
+
+  const handleSuccess = useCallback((message: string) => {
+    setPageMessage(message);
+    setPageError(null);
+  }, []);
+
+  const handleError = useCallback((message: string) => {
+    setPageError(message);
+    setPageMessage(null);
+  }, []);
 
   const fetchQRStatus = async () => {
     try {
@@ -29,76 +41,35 @@ const SettingsPage = () => {
     return () => clearInterval(interval); // bersihkan timer saat unmount
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Basic validation
-    if (!name.trim()) {
-      setMessage('Name is required.');
-      return;
-    }
-    if (!email.trim()) {
-      setMessage('Email is required.');
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setMessage('Please enter a valid email address.');
-      return;
-    }
-
-    // Simulate saving changes (e.g., API call)
-    // For now, just show success message
-    setMessage('Settings saved successfully.');
-
-    // Here you could add API call to save settings
-    // e.g., saveSettings({ name, email, emailNotifications, darkMode });
-  };
-
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Settings</h1>
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Account Settings</h2>
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
-              <input
-                type="text"
-                className="w-full p-2 border border-gray-300 rounded"
-                placeholder="Your Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input
-                type="email"
-                className="w-full p-2 border border-gray-300 rounded"
-                placeholder="your.email@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Save Changes
-            </button>
-          </form>
-          {message && (
-            <p className="mt-4 text-sm text-green-600">{message}</p>
-          )}
-        </div>
+      <h1 className="text-2xl font-bold mb-6">Pengaturan Aplikasi</h1>
 
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Preferences</h2>
-          <div className="space-y-3">
-            <div className="mt-6 p-4 border rounded-lg bg-gray-50">
-          <h3 className="text-lg font-semibold mb-2">WhatsApp Integration</h3>
+      {pageError && (
+        <div className="bg-red-50 text-red-700 p-4 rounded-lg flex items-start mb-6">
+          <AlertCircle className="h-5 w-5 mr-2 mt-0.5" />
+          <span>{pageError}</span>
+        </div>
+      )}
+
+      {pageMessage && (
+        <div className="bg-green-50 text-green-700 p-4 rounded-lg flex items-start mb-6">
+          <CheckCircle className="h-5 w-5 mr-2 mt-0.5" />
+          <span>{pageMessage}</span>
+        </div>
+      )}
+
+      <div className="space-y-8">
+        {/* Pengaturan Tahun Ajaran */}
+        {hasPermission('manage_access') && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <AcademicYearForm onSuccess={handleSuccess} onError={handleError} />
+          </div>
+        )}
+
+        {/* Pengaturan Integrasi WhatsApp */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-xl font-semibold mb-4">Integrasi WhatsApp</h2>
           {!isReady && qr ? (
             <div className="flex flex-col items-center justify-center">
               <p className="text-gray-700 mb-3">Scan QR code ini dengan WhatsApp:</p>
@@ -117,28 +88,6 @@ const SettingsPage = () => {
               <p className="text-sm">Pastikan server Anda berjalan.</p>
             </div>
           )}
-        </div>
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="emailNotifications"
-                className="mr-2"
-                checked={emailNotifications}
-                onChange={(e) => setEmailNotifications(e.target.checked)}
-              />
-              <label htmlFor="emailNotifications">Email Notifications</label>
-            </div>
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="darkMode"
-                className="mr-2"
-                checked={darkMode}
-                onChange={(e) => setDarkMode(e.target.checked)}
-              />
-              <label htmlFor="darkMode">Dark Mode</label>
-            </div>
-          </div>
         </div>
       </div>
     </div>

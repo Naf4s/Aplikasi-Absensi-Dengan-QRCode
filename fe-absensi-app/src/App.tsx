@@ -21,7 +21,6 @@ import StudentsPage from './pages/dashboard/StudentsPage';
 import ReportsPage from './pages/dashboard/ReportsPage';
 import SettingsPage from './pages/dashboard/SettingsPage';
 import UsersPage from './pages/dashboard/UsersPage';
-import AcademicYearSettingsPage from './pages/dashboard/AcademicYearSettingsPage';
 import ClassesPage from './pages/dashboard/ClassesPage'; // Import ClassesPage yang baru
 import PromotionSettingsPage from './pages/dashboard/PromotionSettingsPage'; // Import PromotionSettingsPage
 import AlphaPage from './pages/dashboard/AlphaPage';
@@ -81,8 +80,7 @@ function App() {
             <Route path="reports" element={<ReportsPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="users" element={<UsersPage />} /> 
-            <Route path="settings/academic-year" element={<AcademicYearSettingsPage />} />
-            <Route path="settings/promotion" element={<PromotionSettingsPage />} /> {/* Added promotion route */}
+            <Route path="settings/promotion" element={<PromotionSettingsPage />} /> {/* Rute baru untuk Promosi Siswa */}
             <Route path="classes" element={<ClassesPage />} />{/* Route baru untuk Manajemen Kelas */}
             <Route path="alpha" element={<AlphaPage />} />
             <Route path="news-management" element={<NewsManagementPage />} /> {/* Added News Management route */}
