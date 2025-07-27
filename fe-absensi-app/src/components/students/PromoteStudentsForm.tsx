@@ -72,11 +72,14 @@ const PromoteStudentsForm: React.FC<Props> = ({ onSuccess, onError }) => {
     }
   };
 
-  const filteredStudents = allStudents.filter(student =>
-    student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.nis.includes(searchTerm) ||
-    student.class.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredStudents = allStudents
+    .filter(student =>
+      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      student.nis.includes(searchTerm) ||
+      student.class.toLowerCase().includes(searchTerm.toLowerCase())
+    ).sort((a, b) => {
+      return parseInt(a.class, 10) - parseInt(b.class, 10);
+    });
 
   return (
     <>
