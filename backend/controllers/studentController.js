@@ -176,11 +176,7 @@ import { getDb } from '../utils/database.js';
 
 export const promoteStudents = async (req, res) => {
   try {
-    const { academicYear } = req.body;
-
-    if (!academicYear) {
-      return res.status(400).json({ message: 'Tahun ajaran wajib diisi.' });
-    }
+    const { excludeStudentIds = [] } = req.body; // Ambil array ID siswa yang tidak naik kelas
 
     // Ambil semua siswa dan kelas
     const students = await _getAllStudents();
@@ -190,6 +186,12 @@ export const promoteStudents = async (req, res) => {
     let skipped = 0;
 
     for (const student of students) {
+      // Lewati siswa yang dipilih untuk tidak naik kelas
+      if (excludeStudentIds.includes(student.id)) {
+        skipped++;
+        continue;
+      }
+
       const currentClassName = student.class;
 
       const currentLevel = parseInt(currentClassName);
@@ -222,19 +224,13 @@ export const promoteStudents = async (req, res) => {
       promoted++;
     }
 
-    // Update current_academic_year setting to the selected academic year (no increment)
-    const db = getDb();
-    await db.run('UPDATE settings SET value = ? WHERE key = ?', academicYear, 'current_academic_year');
-
     res.status(200).json({
-      message: `Promosi berhasil. ${promoted} siswa dipindahkan ke kelas selanjutnya. ${skipped} dilewati. Tahun ajaran diperbarui ke ${academicYear}.`,
+      message: `Promosi berhasil. ${promoted} siswa dipindahkan ke kelas selanjutnya. ${skipped} dilewati.`,
       promoted,
-      skipped,
-      newAcademicYear: academicYear
+      skipped
     });
   } catch (error) {
     console.error('Gagal mempromosikan siswa:', error);
     res.status(500).json({ message: 'Terjadi kesalahan saat mempromosikan siswa.' });
   }
 };
-

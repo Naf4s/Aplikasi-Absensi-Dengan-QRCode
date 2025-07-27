@@ -70,8 +70,23 @@ const AcademicYearForm: React.FC<Props> = ({ onSuccess, onError }) => {
             onChange={(e) => setAcademicYear(e.target.value)}
             className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
             placeholder="Contoh: 2025/2026"
+            pattern="\d{4}/\d{4}"
+            title="Format harus berupa TTTT/TTTT, contoh: 2025/2026"
             required
           />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Semester</label>
+          <select
+            value={semester}
+            onChange={(e) => setSemester(e.target.value)}
+            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+            required
+          >
+            <option value="">Pilih Semester</option>
+            <option value="Ganjil">Ganjil</option>
+            <option value="Genap">Genap</option>
+          </select>
         </div>
       </div>
 
