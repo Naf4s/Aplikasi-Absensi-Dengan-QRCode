@@ -12,6 +12,7 @@ import settingsRoutes from './routes/settingsRoutes.js';
 import authMiddleware from "./middleware/authMiddleware.js";
 // import { getQRStatus } from "./service/waService.js";
 import newsRoutes from './routes/newsRoutes.js';
+import programRoutes from './routes/programRoutes.js';
 // import waRoutes from './routes/waRoutes.js';
 
 dotenv.config();
@@ -36,6 +37,7 @@ initializeDatabase()
     app.use('/api/classes', authMiddleware, classRoutes);
     app.use('/api/dashboard', authMiddleware, dashboardRoutes); 
     app.use('/api/settings', authMiddleware, settingsRoutes);
+    app.use('/api/programs', programRoutes);
     // app.use('/api/wa-status', waRoutes);
     app.use('/api/news', newsRoutes);
     //Route Sederhana untuk Test

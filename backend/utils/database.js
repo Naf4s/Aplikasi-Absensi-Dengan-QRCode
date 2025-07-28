@@ -68,6 +68,13 @@ export async function initializeDatabase() {
       "CREATE TABLE IF NOT EXISTS settings (" +
         "key TEXT PRIMARY KEY," +
         "value TEXT NOT NULL" +
+      ");" +
+
+      "CREATE TABLE IF NOT EXISTS programs (" +
+        "id TEXT PRIMARY KEY," +
+        "title TEXT NOT NULL," +
+        "content TEXT NOT NULL," +
+        "imageUrl TEXT" +
       ");";
 
     const createNewsTableSQL = `

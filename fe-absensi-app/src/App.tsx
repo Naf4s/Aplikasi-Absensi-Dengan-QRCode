@@ -25,7 +25,7 @@ import ClassesPage from './pages/dashboard/ClassesPage'; // Import ClassesPage y
 import PromotionSettingsPage from './pages/dashboard/PromotionSettingsPage'; // Import PromotionSettingsPage
 import AlphaPage from './pages/dashboard/AlphaPage';
 import NewsManagementPage from './pages/dashboard/NewsManagementPage'; // Import NewsManagementPage
-
+import ProgramManagementPage from './pages/dashboard/ProgramManagementPage';
 // Komponen ini akan menangani redirect setelah login
 const AuthRedirect: React.FC = () => {
   const { user, loading } = useAuth();
@@ -84,6 +84,7 @@ function App() {
             <Route path="classes" element={<ClassesPage />} />{/* Route baru untuk Manajemen Kelas */}
             <Route path="alpha" element={<AlphaPage />} />
             <Route path="news-management" element={<NewsManagementPage />} /> {/* Added News Management route */}
+            <Route path="program-management" element={<ProgramManagementPage />} /> {/* Added Program Management route */}
           </Route>
         </Routes>
       </Router>
