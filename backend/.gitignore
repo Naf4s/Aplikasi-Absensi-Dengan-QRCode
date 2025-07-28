@@ -1,0 +1,14 @@
+# Folder yang tidak perlu ikut Git
+node_modules/
+.local-chromium/
+puppeteer-core/
+.wwebjs_auth/
+.wwebjs_cache/
+
+# File konfigurasi sensitif & log
+.env
+*.log
+absensi.db
+
+# Lainnya (opsional)
+*.sqlite

@@ -1,0 +1,129 @@
+import React, { useState, useEffect } from 'react';
+import api from '../../lib/api';
+import logo from '../../assets/logo.png';
+
+interface Props {
+  onSuccess: (message: string) => void;
+  onError: (message: string) => void;
+}
+
+interface Setting {
+  key: string;
+  value: string;
+}
+
+const AcademicYearForm: React.FC<Props> = ({ onSuccess, onError }) => {
+  const [academicYear, setAcademicYear] = useState('');
+  const [semester, setSemester] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+
+  // Ambil data awal dari /settings
+  useEffect(() => {
+    const fetchSettings = async () => {
+      setIsFetching(true);
+      try {
+        const response = await api.get<Setting[]>('/settings');
+        const settings = response.data;
+
+        const academicYearSetting = settings.find((s) => s.key === 'current_academic_year');
+        const semesterSetting = settings.find((s) => s.key === 'current_semester');
+
+        if (academicYearSetting) setAcademicYear(academicYearSetting.value);
+        if (semesterSetting) setSemester(semesterSetting.value);
+      } catch (err) {
+        console.error('Gagal memuat pengaturan:', err);
+        onError('Gagal memuat pengaturan.');
+      } finally {
+        setIsFetching(false);
+      }
+    };
+
+    fetchSettings();
+  }, [onError]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await api.put('/settings', [
+        { key: 'current_academic_year', value: academicYear },
+        { key: 'current_semester', value: semester }
+      ]);
+
+      onSuccess('Tahun ajaran dan semester berhasil diperbarui.');
+    } catch (err) {
+      console.error('Gagal menyimpan:', err);
+      onError('Gagal menyimpan pengaturan.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (isFetching) {
+    return (
+      <div className="bg-white shadow-sm rounded-lg p-6 space-y-6 border border-gray-200 animate-pulse">
+        <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+        <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="h-10 bg-gray-200 rounded"></div>
+          <div className="h-10 bg-gray-200 rounded"></div>
+        </div>
+        <div className="h-10 bg-gray-200 rounded w-32"></div>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-white shadow-sm rounded-lg p-6 space-y-6 border border-gray-200">
+      <div>
+        <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+          <img src={logo} alt="Logo" className="h-5 w-5" />
+          Pengaturan Tahun Ajaran
+        </h2>
+        <p className="text-sm text-gray-500">Setel tahun ajaran dan semester aktif saat ini.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Tahun Ajaran</label>
+          <input
+            type="text"
+            value={academicYear}
+            onChange={(e) => setAcademicYear(e.target.value)}
+            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+            placeholder="Contoh: 2025/2026"
+            pattern="\d{4}/\d{4}"
+            title="Format harus berupa TTTT/TTTT, contoh: 2025/2026"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Semester</label>
+          <select
+            value={semester}
+            onChange={(e) => setSemester(e.target.value)}
+            className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+            required
+          >
+            <option value="">Pilih Semester</option>
+            <option value="1">Ganjil</option>
+            <option value="2">Genap</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="pt-4">
+        <button
+          type="submit"
+          className="btn-primary"
+          disabled={loading}
+        >
+          {loading ? 'Menyimpan...' : 'Simpan Pengaturan'}
+        </button>
+      </div>
+    </form>
+  );
+};
+
+export default AcademicYearForm;
