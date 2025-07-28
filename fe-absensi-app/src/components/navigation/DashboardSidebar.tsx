@@ -37,7 +37,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isOpen, onClose }) 
       { name: 'Kenaikan Kelas', path: '/dashboard/settings/promotion', icon: GraduationCap, permission: 'manage_classes' },
       { name: 'Notifikasi Alpha', path: '/dashboard/alpha', icon: Send, permission: 'send_notification' },
       { name: 'News Management', path: '/dashboard/news-management', icon: NewsIcon, hideForRoles: ['teacher'] },
-      { name: 'Program Management', path: '/dashboard/program-management', icon: FileText, permission: 'manage_programs' },
+      { name: 'Program Management', path: '/dashboard/program-management', icon: FileText, hideForRoles: ['teacher']  },
       { name: 'Pengaturan', path: '/dashboard/settings', icon: Settings, permission: 'manage_access', end: true }
     ];
 
