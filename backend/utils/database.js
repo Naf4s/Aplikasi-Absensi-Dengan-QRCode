@@ -70,12 +70,26 @@ export async function initializeDatabase() {
         "value TEXT NOT NULL" +
       ");";
 
+    const createNewsTableSQL = `
+      CREATE TABLE IF NOT EXISTS news (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          content TEXT NOT NULL,
+          date TEXT NOT NULL,
+          imageUrl TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );`;
+
     await db.exec(createTablesSQL);
 
     console.log('Tables "users", "students", "attendance_records", "classes", and "settings" are ready.');
 
     // Seed admin user if not exists
     const existingAdmin = await db.get('SELECT * FROM users WHERE email = ?', 'admin@example.com');
+
+    await db.exec(createNewsTableSQL);
+    console.log('Table "news" is ready.');
     if (!existingAdmin) {
       const hashedPassword = await bcrypt.hash('admin123', 10);
       await db.run(
