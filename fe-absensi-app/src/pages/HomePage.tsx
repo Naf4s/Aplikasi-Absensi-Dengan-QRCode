@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Award, BookOpen, QrCode, Users, Calendar, Clock } from 'lucide-react';
 import api from '../lib/api';
+import Bg from '../assets/Bg.jpeg';
 
 interface NewsItem {
   id: number;
@@ -46,7 +47,7 @@ const HomePage: React.FC = () => {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: 'url(https://images.pexels.com/photos/8471835/pexels-photo-8471835.jpeg)',
+            backgroundImage: `url(${Bg})`,
           }}
         ></div>
 

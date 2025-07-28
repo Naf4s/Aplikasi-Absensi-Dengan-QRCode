@@ -84,7 +84,7 @@ const StudentTable: React.FC<StudentTableProps> = ({
 
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden" role="region" aria-label="Tabel data siswa">
-      <div className="overflow-x-auto overflow-y-auto max-h-[65vh] scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-gray-50">
+      <div className="overflow-x-auto overflow-y-auto max-h-[75vh] scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-gray-50">
         <table className="min-w-full divide-y divide-gray-200" aria-label="Tabel siswa">
           <thead className="bg-gray-50 sticky top-0 z-20 shadow-sm">
             <tr>
