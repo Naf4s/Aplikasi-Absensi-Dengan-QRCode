@@ -1,32 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../lib/api';
-import { CalendarDays, School } from 'lucide-react';
+import { School } from 'lucide-react';
 
 interface Props {
   onSuccess: (message: string) => void;
   onError: (message: string) => void;
 }
 
+interface Setting {
+  key: string;
+  value: string;
+}
+
 const AcademicYearForm: React.FC<Props> = ({ onSuccess, onError }) => {
   const [academicYear, setAcademicYear] = useState('');
   const [semester, setSemester] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
 
   // Ambil data awal dari /settings
   useEffect(() => {
     const fetchSettings = async () => {
+      setIsFetching(true);
       try {
-        const response = await api.get('/settings');
+        const response = await api.get<Setting[]>('/settings');
         const settings = response.data;
 
-        const academicYearSetting = settings.find((s: any) => s.key === 'current_academic_year');
-        const semesterSetting = settings.find((s: any) => s.key === 'current_semester');
+        const academicYearSetting = settings.find((s) => s.key === 'current_academic_year');
+        const semesterSetting = settings.find((s) => s.key === 'current_semester');
 
         if (academicYearSetting) setAcademicYear(academicYearSetting.value);
         if (semesterSetting) setSemester(semesterSetting.value);
       } catch (err) {
         console.error('Gagal memuat pengaturan:', err);
         onError('Gagal memuat pengaturan.');
+      } finally {
+        setIsFetching(false);
       }
     };
 
@@ -50,6 +59,20 @@ const AcademicYearForm: React.FC<Props> = ({ onSuccess, onError }) => {
       setLoading(false);
     }
   };
+
+  if (isFetching) {
+    return (
+      <div className="bg-white shadow-sm rounded-lg p-6 space-y-6 border border-gray-200 animate-pulse">
+        <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+        <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="h-10 bg-gray-200 rounded"></div>
+          <div className="h-10 bg-gray-200 rounded"></div>
+        </div>
+        <div className="h-10 bg-gray-200 rounded w-32"></div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="bg-white shadow-sm rounded-lg p-6 space-y-6 border border-gray-200">
@@ -84,8 +107,8 @@ const AcademicYearForm: React.FC<Props> = ({ onSuccess, onError }) => {
             required
           >
             <option value="">Pilih Semester</option>
-            <option value="Ganjil">Ganjil</option>
-            <option value="Genap">Genap</option>
+            <option value="1">Ganjil</option>
+            <option value="2">Genap</option>
           </select>
         </div>
       </div>
