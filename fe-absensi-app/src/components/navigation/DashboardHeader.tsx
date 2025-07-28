@@ -1,15 +1,45 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, Bell, User } from 'lucide-react';
+import { Menu, CalendarDays } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-
+import api from '../../lib/api';
 
 interface DashboardHeaderProps {
   onMenuClick: () => void;
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onMenuClick }) => {
-  const { user } = useAuth();
+  const [academicYear, setAcademicYear] = useState<string>('');
+  const [semester, setSemester] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchCurrentSettings = async () => {
+      setIsLoading(true);
+      try {
+        const response = await api.get('/settings');
+        const settings = response.data;
+        const yearSetting = settings.find((s: any) => s.key === 'current_academic_year');
+        const semesterSetting = settings.find((s: any) => s.key === 'current_semester');
+
+        if (yearSetting) {
+          setAcademicYear(yearSetting.value);
+        }
+        if (semesterSetting) {
+          // Mengubah nilai numerik menjadi teks yang mudah dibaca
+          setSemester(semesterSetting.value === '1' ? 'Ganjil' : 'Genap');
+        }
+      } catch (error) {
+        console.error("Gagal memuat pengaturan untuk header:", error);
+        setAcademicYear('N/A');
+        setSemester('N/A');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCurrentSettings();
+  }, []);
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-10">
@@ -33,21 +63,18 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onMenuClick }) => {
           <span className="text-lg font-bold text-primary-800">SIPABSEN</span>
         </Link>
 
-        {/* Right side icons */}
+        {/* Info Tahun Ajaran & Semester */}
         <div className="flex items-center space-x-3">
-          <button className="p-1 rounded-full text-gray-500 hover:text-gray-600 hover:bg-gray-100">
-            <Bell className="h-6 w-6" />
-          </button>
-
-          {/* User dropdown */}
-          <div className="relative">
-            <button className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-              <span className="sr-only">Open user menu</span>
-              <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-800 font-medium">
-                {user?.name.charAt(0) || 'U'}
-              </div>
-            </button>
-          </div>
+          {isLoading ? (
+            <div className="h-5 bg-gray-200 rounded-md w-40 animate-pulse"></div>
+          ) : (
+            <div className="flex items-center space-x-2 px-3 py-1.5 rounded-md bg-primary-50 text-primary-800 border border-primary-200">
+              <CalendarDays className="h-4 w-4" />
+              <span className="text-sm font-medium">
+                {academicYear} | {semester}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </header>
