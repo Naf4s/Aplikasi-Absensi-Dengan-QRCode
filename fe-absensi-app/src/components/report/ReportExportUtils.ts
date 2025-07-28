@@ -91,197 +91,183 @@ export const generateExcelReport = (
   statistics: AttendanceStatistics,
   filterClass: string,
   filterMonthYear: string,
-  monthsData: MonthData[]
+  monthsData: MonthData[],
+  academicYear: string,
+  semester: string
 ): void => {
   const workbook = XLSX.utils.book_new();
+  const reportDate = new Date().toLocaleDateString('id-ID');
 
-  // --- Sheet: Ringkasan Statistik ---
+  // Helper untuk styling header
+  const headerStyle = {
+    font: { bold: true, color: { rgb: "FFFFFF" } },
+    fill: { fgColor: { rgb: "1E40AF" } }, // Biru Tua Konsisten
+    alignment: { horizontal: "center", vertical: "center" },
+    border: {
+      top: { style: "thin", color: { rgb: "000000" } },
+      bottom: { style: "thin", color: { rgb: "000000" } },
+      left: { style: "thin", color: { rgb: "000000" } },
+      right: { style: "thin", color: { rgb: "000000" } }
+    }
+  };
+
+  // Helper untuk styling sel data dengan border dan alignment
+  const cellStyle = {
+    alignment: { vertical: 'center' as const, wrapText: true },
+    border: {
+      top: { style: 'thin' as const, color: { rgb: '000000' } },
+      bottom: { style: 'thin' as const, color: { rgb: '000000' } },
+      left: { style: 'thin' as const, color: { rgb: '000000' } },
+      right: { style: 'thin' as const, color: { rgb: '000000' } },
+    },
+  };
+
+  // --- 1. Sheet: Ringkasan Laporan ---
   const summaryData = [
-    ['LAPORAN ABSENSI SISWA', ''],
-    ['SD N 1 Bumirejo', ''],
-    ['', ''],
-    [`Periode: Bulan ${monthsData.find(m => m.value === filterMonthYear.substring(5, 7))?.name} ${filterMonthYear.substring(0, 4)}`, ''],
-    [`Kelas: ${filterClass || 'Semua'}`, ''],
-    ['', ''],
-    ['Metrik', 'Nilai'],
+    ['LAPORAN ABSENSI SISWA'],
+    ['SD N 1 Bumirejo'],
+    [], // Baris kosong
+    ['Periode', `${monthsData.find(m => m.value === filterMonthYear.substring(5, 7))?.name} ${filterMonthYear.substring(0, 4)}`],
+    ['Tahun Ajaran', `${academicYear || 'N/A'} | Semester: ${semester === '1' ? 'Ganjil' : semester === '2' ? 'Genap' : 'N/A'}`],
+    ['Kelas', filterClass || 'Semua Kelas'],
+    ['Tanggal Laporan', reportDate],
+    [], // Baris kosong
+    ['METRIK UTAMA', 'NILAI'],
     ['Total Siswa Terdata', statistics.totalReportedStudents],
-    ['Rata-rata Kehadiran (%)', statistics.averagePresencePercentage],
-    ['Total Ketidakhadiran (%)', statistics.absencePercentage],
+    ['Rata-rata Kehadiran', `${statistics.averagePresencePercentage}%`],
+    ['Total Ketidakhadiran', `${statistics.absencePercentage}%`],
     ['Total Absensi Tercatat', statistics.totalOverallAttendance],
-    ['Hadir', statistics.totalPresentCount],
-    ['Tanpa Keterangan', statistics.totalAbsentCount],
-    ['Sakit', statistics.totalSickCount],
-    ['Izin', statistics.totalPermitCount],
+    [], // Baris kosong
+    ['DETAIL STATUS', 'JUMLAH'],
+    ['Total Hadir', statistics.totalPresentCount],
+    ['Total Tanpa Keterangan', statistics.totalAbsentCount],
+    ['Total Sakit', statistics.totalSickCount],
+    ['Total Izin', statistics.totalPermitCount],
   ];
-  
   const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+  // Merge cells untuk judul
+  wsSummary['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 1 } },
+  ];
+  // Styling header
+  wsSummary['A9'].s = headerStyle;
+  wsSummary['B9'].s = headerStyle;
+  wsSummary['A15'].s = headerStyle;
+  wsSummary['B15'].s = headerStyle;
 
-  // --- Sheet: Data Siswa ---
-  const uniqueStudents = Array.from(new Set(attendanceData.map(record => record.student_id)))
-    .map(id => attendanceData.find(record => record.student_id === id)!);
-    
-  const studentDataHeader = ['NIS', 'Nama Siswa', 'Kelas', 'Jenis Kelamin'];
-  const studentData = uniqueStudents.map(s => [
-    s.nis,
-    s.student_name,
-    s.class,
-    s.gender === 'L' ? 'Laki-laki' : 'Perempuan',
-  ]);
-  const wsStudentData = XLSX.utils.aoa_to_sheet([studentDataHeader, ...studentData]);
+  // Styling data cells di Ringkasan
+  for (let R = 8; R < summaryData.length; ++R) {
+    if (!summaryData[R][0] && !summaryData[R][1]) continue; // Lewati baris kosong
+    const cellA = XLSX.utils.encode_cell({ r: R, c: 0 });
+    const cellB = XLSX.utils.encode_cell({ r: R, c: 1 });
+    if (wsSummary[cellA] && !wsSummary[cellA].s) wsSummary[cellA].s = { ...cellStyle, alignment: { ...cellStyle.alignment, horizontal: 'left' } };
+    if (wsSummary[cellB] && !wsSummary[cellB].s) wsSummary[cellB].s = { ...cellStyle, alignment: { ...cellStyle.alignment, horizontal: 'left' } };
+  }
 
-  // Styling header row for student data sheet
-  const rangeStudentData = XLSX.utils.decode_range(wsStudentData['!ref']!);
-  for (let C = rangeStudentData.s.c; C <= rangeStudentData.e.c; ++C) {
+  // Set column widths
+  wsSummary['!cols'] = [{ wch: 25 }, { wch: 25 }];
+  XLSX.utils.book_append_sheet(workbook, wsSummary, 'Ringkasan Laporan');
+
+  // --- 2. Sheet: Ringkasan per Siswa ---
+  const summaryStudentHeader = ['No', 'NIS', 'Nama Siswa', 'Kelas', 'Hadir', 'Sakit', 'Izin', 'Tanpa Keterangan', 'Total Absensi', 'Persentase Hadir (%)'];
+  const summaryStudentData = statistics.summarizedStudents.map((s, index) => {
+    const total = s.present + s.sick + s.permit + s.absent;
+    const percentage = total > 0 ? parseFloat(((s.present / total) * 100).toFixed(1)) : 0.0;
+    return [index + 1, s.nis, s.name, s.class, s.present, s.sick, s.permit, s.absent, total, percentage];
+  });
+  const wsStudentSummary = XLSX.utils.aoa_to_sheet([summaryStudentHeader, ...summaryStudentData]);
+  // Styling header
+  const rangeStudent = XLSX.utils.decode_range(wsStudentSummary['!ref']!);
+  for (let C = rangeStudent.s.c; C <= rangeStudent.e.c; ++C) {
     const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C });
-    if (!wsStudentData[cellAddress]) continue;
-    wsStudentData[cellAddress].s = {
-      font: { bold: true, color: { rgb: "FFFFFF" } },
-      fill: { fgColor: { rgb: "1E40AF" } },
-      alignment: { horizontal: "center", vertical: "center" },
-      border: {
-        top: { style: "thin", color: { rgb: "1F2937" } },
-        bottom: { style: "thin", color: { rgb: "1F2937" } },
-        left: { style: "thin", color: { rgb: "1F2937" } },
-        right: { style: "thin", color: { rgb: "1F2937" } }
-      }
-    };
+    if (wsStudentSummary[cellAddress]) wsStudentSummary[cellAddress].s = headerStyle;
   }
-  wsStudentData['!cols'] = [
-    { wch: 15 }, { wch: 25 }, { wch: 10 }, { wch: 12 }
+
+  // Terapkan style ke sel data di Ringkasan per Siswa
+  summaryStudentData.forEach((row, R) => {
+    row.forEach((_cell, C) => {
+      const cellRef = XLSX.utils.encode_cell({ r: R + 1, c: C });
+      if (wsStudentSummary[cellRef]) {
+        let alignment = { vertical: 'center' as const, horizontal: 'left' as const, wrapText: true };
+        // Rata tengah untuk kolom No dan semua kolom angka
+        if (C === 0 || (C >= 4 && C <= 9)) {
+          alignment.horizontal = 'center';
+        }
+        wsStudentSummary[cellRef].s = { border: cellStyle.border, alignment };
+        if (C === 1) wsStudentSummary[cellRef].t = 's'; // Format NIS sebagai teks
+      }
+    });
+  });
+
+  // Set column widths
+  wsStudentSummary['!cols'] = [
+    { wch: 5 }, { wch: 15 }, { wch: 30 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 15 }, { wch: 12 }, { wch: 20 }
   ];
+  XLSX.utils.book_append_sheet(workbook, wsStudentSummary, 'Ringkasan per Siswa');
 
-  // Styling header row for summary sheet
-  const rangeSummary = XLSX.utils.decode_range(wsSummary['!ref']!);
-  for (let C = rangeSummary.s.c; C <= rangeSummary.e.c; ++C) {
-    const cellAddress = XLSX.utils.encode_cell({ r: 6, c: C });
-    if (!wsSummary[cellAddress]) continue;
-    wsSummary[cellAddress].s = {
-      font: { bold: true, color: { rgb: "FFFFFF" } },
-      fill: { fgColor: { rgb: "4338CA" } },
-      alignment: { horizontal: "center", vertical: "center" },
-      border: {
-        top: { style: "thin", color: { rgb: "1F2937" } },
-        bottom: { style: "thin", color: { rgb: "1F2937" } },
-        left: { style: "thin", color: { rgb: "1F2937" } },
-        right: { style: "thin", color: { rgb: "1F2937" } }
-      }
-    };
-  }
-  wsSummary['!cols'] = [{ wch: 30 }, { wch: 20 }];
-
-  XLSX.utils.book_append_sheet(workbook, wsSummary, 'Ringkasan');
-  XLSX.utils.book_append_sheet(workbook, wsStudentData, 'Data Siswa');
-
-  // --- Sheet: Detail Absensi Siswa per Record ---
+  // --- 3. Sheet: Detail Absensi (Log) ---
+  const getKeteranganText = (record: AttendanceRecord): string => {
+    if (record.status === 'present') {
+      return record.time_in && record.time_in > '07:30:00' ? 'Terlambat' : 'Hadir Tepat Waktu';
+    }
+    if (record.status === 'absent') return 'Tanpa Keterangan';
+    if (record.status === 'sick') return record.notes ? `Sakit - ${record.notes}` : 'Sakit';
+    if (record.status === 'permit') return record.notes ? `Izin - ${record.notes}` : 'Izin';
+    return '-';
+  };
   const detailHeader = [
-    'Tanggal', 'NIS', 'Nama Siswa', 'Kelas', 'Status', 'Jam Masuk', 'Keterangan', 'Dicatat Oleh'
+    'No', 'Tanggal', 'NIS', 'Nama Siswa', 'Kelas', 'Status', 'Jam Masuk', 'Keterangan', 'Dicatat Oleh'
   ];
-  const detailData = attendanceData.map(record => [
-    new Date(record.date).toLocaleDateString('id-ID'),
+  const detailData = attendanceData.map((record, index) => [
+    index + 1,
+    new Date(record.date), // Gunakan objek Date asli
     record.nis,
     record.student_name,
     record.class,
     record.status === 'present' ? 'Hadir' : record.status === 'absent' ? 'Tanpa Keterangan' : record.status === 'sick' ? 'Sakit' : 'Izin',
     record.time_in || '-',
-    (() => {
-      if (record.status === 'present') {
-        return record.time_in && record.time_in > '07:30:00'
-          ? '⏰'
-          : '✅';
-      } else if (record.status === 'absent') {
-        return '❌';
-      } else if (record.status === 'sick') {
-        return record.notes ? `🤒 Sakit - ${record.notes}` : '🤒';
-      } else if (record.status === 'permit') {
-        return record.notes ? `📄 Izin - ${record.notes}` : '📄';
-      } else {
-        return '-';
-      }
-    })(),
+    getKeteranganText(record),
     record.marked_by_user_name || '-',
   ]);
   const wsDetail = XLSX.utils.aoa_to_sheet([detailHeader, ...detailData]);
-
-  // Styling header row for detail sheet
+  // Styling header
   const rangeDetail = XLSX.utils.decode_range(wsDetail['!ref']!);
   for (let C = rangeDetail.s.c; C <= rangeDetail.e.c; ++C) {
     const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C });
-    if (!wsDetail[cellAddress]) continue;
-    wsDetail[cellAddress].s = {
-      font: { bold: true, color: { rgb: "FFFFFF" } },
-      fill: { fgColor: { rgb: "1E40AF" } },
-      alignment: { horizontal: "center", vertical: "center" },
-      border: {
-        top: { style: "thin", color: { rgb: "1F2937" } },
-        bottom: { style: "thin", color: { rgb: "1F2937" } },
-        left: { style: "thin", color: { rgb: "1F2937" } },
-        right: { style: "thin", color: { rgb: "1F2937" } }
+    if (wsDetail[cellAddress]) wsDetail[cellAddress].s = headerStyle;
+  }
+
+  // Terapkan style ke sel data di Detail Absensi
+  detailData.forEach((row, R) => {
+    row.forEach((_cell, C) => {
+      const cellRef = XLSX.utils.encode_cell({ r: R + 1, c: C });
+      if (wsDetail[cellRef]) {
+        let alignment = { vertical: 'center' as const, horizontal: 'left' as const, wrapText: true };
+        // Rata tengah untuk kolom No dan Jam Masuk
+        if (C === 0 || C === 6) {
+          alignment.horizontal = 'center';
+        }
+        wsDetail[cellRef].s = { border: cellStyle.border, alignment };
+        if (C === 1) { // Format Tanggal
+          wsDetail[cellRef].t = 'd';
+          wsDetail[cellRef].z = 'dd-mm-yyyy';
+        }
+        if (C === 2) wsDetail[cellRef].t = 's'; // Format NIS sebagai teks
       }
-    };
-  }
+    });
+  });
+
+  // Set column widths
   wsDetail['!cols'] = [
-    { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 15 }, { wch: 25 },
-    { wch: 15 }, { wch: 25 }, { wch: 10 }, { wch: 12 }, { wch: 20 }
+    { wch: 5 }, { wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 10 }, { wch: 18 }, { wch: 12 }, { wch: 30 }, { wch: 20 }
   ];
-
-  // Format NIS column as text to prevent Excel date formatting issues
-  for (let R = 1; R <= detailData.length; ++R) {
-    const cellAddress = XLSX.utils.encode_cell({ r: R, c: 1 });
-    if (wsDetail[cellAddress]) {
-      wsDetail[cellAddress].t = 's';
-      wsDetail[cellAddress].z = '@';
-      wsDetail[cellAddress].v = wsDetail[cellAddress].v.toString();
-    }
-  }
-
-  // Format date column as date type
-  for (let R = 1; R <= detailData.length; ++R) {
-    const cellAddress = XLSX.utils.encode_cell({ r: R, c: 0 });
-    if (wsDetail[cellAddress]) {
-      wsDetail[cellAddress].t = 'd';
-      wsDetail[cellAddress].z = XLSX.SSF._table[14];
-      wsDetail[cellAddress].v = new Date(wsDetail[cellAddress].v);
-    }
-  }
-
   XLSX.utils.book_append_sheet(workbook, wsDetail, 'Detail Absensi');
 
-  // --- Sheet: Ringkasan Siswa (Hadir, Sakit, Izin, Absen) ---
-  const summaryStudentHeader = ['NIS', 'Nama Siswa', 'Kelas', 'Hadir', 'Sakit', 'Izin', 'Tanpa Keterangan', 'Persentase Hadir (%)'];
-  const summaryStudentData = statistics.summarizedStudents.map(s => {
-    const total = s.present + s.sick + s.permit + s.absent;
-    const percentage = total > 0 ? ((s.present / total) * 100).toFixed(1) : '0.0';
-    return [s.nis, s.name, s.class, s.present, s.sick, s.permit, s.absent, percentage];
-  });
-  const wsStudentSummary = XLSX.utils.aoa_to_sheet([summaryStudentHeader, ...summaryStudentData]);
-
-  // Styling header row for student summary sheet
-  const rangeStudent = XLSX.utils.decode_range(wsStudentSummary['!ref']!);
-  for (let C = rangeStudent.s.c; C <= rangeStudent.e.c; ++C) {
-    const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C });
-    if (!wsStudentSummary[cellAddress]) continue;
-    wsStudentSummary[cellAddress].s = {
-      font: { bold: true, color: { rgb: "FFFFFF" } },
-      fill: { fgColor: { rgb: "047857" } },
-      alignment: { horizontal: "center", vertical: "center" },
-      border: {
-        top: { style: "thin", color: { rgb: "1F2937" } },
-        bottom: { style: "thin", color: { rgb: "1F2937" } },
-        left: { style: "thin", color: { rgb: "1F2937" } },
-        right: { style: "thin", color: { rgb: "1F2937" } }
-      }
-    };
-  }
-  wsStudentSummary['!cols'] = [
-    { wch: 15 }, { wch: 25 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 15 }, { wch: 20 }
-  ];
-
-  XLSX.utils.book_append_sheet(workbook, wsStudentSummary, 'Ringkasan Siswa');
-
-  // Freeze header rows in all sheets
-  wsSummary['!freeze'] = { xSplit: 0, ySplit: 7 };
-  wsDetail['!freeze'] = { xSplit: 0, ySplit: 1 };
-  wsStudentSummary['!freeze'] = { xSplit: 0, ySplit: 1 };
+  // Freeze header rows
+  wsSummary['!freeze'] = { ySplit: 8 };
+  wsStudentSummary['!freeze'] = { ySplit: 1 };
+  wsDetail['!freeze'] = { ySplit: 1 };
 
   // Generate Excel file
   const filename = `Laporan_Absensi_${filterClass || 'Semua'}_${filterMonthYear.replace('-', '_')}.xlsx`;

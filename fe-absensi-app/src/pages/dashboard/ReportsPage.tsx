@@ -162,7 +162,7 @@ const ReportsPage: React.FC = () => {
 
   // Handle Excel export
   const handleExportExcel = () => {
-    generateExcelReport(attendanceData, statistics, filterClass, filterMonthYear, monthsData);
+    generateExcelReport(attendanceData, statistics, filterClass, filterMonthYear, monthsData, academicYear, semester);
   };
 
   // Ini Wajib Kamu Ingat! (Kontrol Akses Frontend)
