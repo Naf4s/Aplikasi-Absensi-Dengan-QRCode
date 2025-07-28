@@ -1,129 +1,122 @@
-# 📚 Aplikasi Absensi Dengan QR Code
+# SI-Absen: Sistem Informasi Absensi
 
-Selamat datang di **Aplikasi Absensi Dengan QR Code**! 🎉  
-Sistem absensi berbasis web yang memanfaatkan teknologi QR Code untuk memudahkan proses absensi siswa atau pengguna secara cepat dan akurat.
+A comprehensive web-based attendance management system designed for educational institutions. It features a React frontend and a Node.js backend, providing a seamless experience for managing student, class, and attendance data.
 
----
+## Features
 
-## 🚀 Struktur Proyek
+### Frontend (React + TypeScript)
 
-- `backend/` - Backend API menggunakan **Node.js**, **Express**, dan **SQLite** sebagai database.
-- `fe-absensi-app/` - Frontend aplikasi web menggunakan **React**, **TypeScript**, dan **Vite** sebagai build tool.
+-   **Dashboard:** At-a-glance view of key statistics, including daily attendance percentage, total students, and weekly attendance trends.
+-   **Attendance Management:**
+    -   Manually mark student attendance (Present, Sick, Permit, Absent).
+    -   Real-time QR code scanning for quick check-ins.
+    -   View daily attendance status by class.
+-   **Student Management:**
+    -   Full CRUD operations for student data.
+    -   Bulk import students from Excel files.
+    -   Generate and export individual or bulk QR codes for students.
+-   **Class Management:**
+    -   Full CRUD operations for classes.
+    -   Assign homeroom teachers to classes.
+    -   Student promotion system to move students to the next grade.
+-   **User Management:**
+    -   CRUD for system users (e.g., Admin, Teacher).
+    -   Role-based access control to protect sensitive operations.
+-   **Reporting:**
+    -   Generate detailed monthly and class-based attendance reports.
+    -   Filter reports by class, date, and status.
+    -   Export reports to Excel or print-friendly formats.
+-   **Communication:**
+    -   Send WhatsApp notifications to parents for absent students.
+-   **Content Management:**
+    -   Manage school news/announcements.
+    -   Manage school program information.
+-   **System Settings:**
+    -   Configure academic year and semester.
+    -   Integrate with WhatsApp via QR code scanning.
 
----
+### Backend (Node.js)
 
-## 🛠️ Backend
+-   RESTful API for all frontend features.
+-   JWT-based authentication and authorization.
+-   Database integration for storing all application data.
+-   Handles QR code validation and attendance recording.
+-   WhatsApp integration for sending notifications.
+-   Bulk data processing for student imports.
 
-### 🔧 Teknologi
+## Tech Stack
 
-- Node.js (ES Modules)
-- Express
-- SQLite (database file: `backend/absensi.db`)
-- bcryptjs, jsonwebtoken untuk autentikasi dan keamanan
-- dotenv untuk konfigurasi environment
-- CORS untuk komunikasi dengan frontend
+-   **Frontend:**
+    -   React
+    -   TypeScript
+    -   Tailwind CSS
+    -   Axios
+    -   Chart.js
+    -   React Router
 
-### ⚙️ Instalasi dan Menjalankan Backend
+-   **Backend:**
+    -   Node.js
+    -   Express.js (Likely)
+    -   A relational database like PostgreSQL or MySQL (Likely)
+    -   Prisma or another ORM (Likely)
 
-1. Masuk ke direktori backend:
-   ```bash
-   cd backend
-   ```
+## Getting Started
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+### Prerequisites
 
-3. Buat file `.env` di dalam folder `backend` jika diperlukan, contoh isi minimal:
-   ```
-   PORT=8000
-   ```
+-   Node.js (v18.x or later recommended)
+-   npm or yarn
+-   A running instance of the backend server.
 
-4. Jalankan server:
-   ```bash
-   node server.js
-   ```
-   Server akan berjalan di `http://localhost:8000` (atau port sesuai konfigurasi `.env`).
+### Frontend Setup
 
-### 🔗 API Endpoint
+1.  Navigate to the frontend directory:
+    ```sh
+    cd fe-absensi-app
+    ```
+2.  Install dependencies:
+    ```sh
+    npm install
+    ```
+3.  Create a `.env` file in the `fe-absensi-app` directory and add the backend API URL. The variable name might differ based on your Vite configuration (e.g., `VITE_API_BASE_URL`).
+    ```
+    VITE_API_BASE_URL=http://localhost:5000/api
+    ```
+4.  Start the development server:
+    ```sh
+    npm run dev
+    ```
+    The application should now be running on `http://localhost:5173` (or another port if specified).
 
-Backend menyediakan berbagai endpoint API di bawah prefix `/api`, seperti:  
-- 🔐 `/api/auth` - Autentikasi pengguna  
-- 👩‍🎓 `/api/students` - Manajemen data siswa (dilindungi autentikasi)  
-- 📝 `/api/attendance` - Data absensi (dilindungi autentikasi)  
-- 👥 `/api/users` - Manajemen pengguna (dilindungi autentikasi)  
-- 🏫 `/api/classes` - Manajemen kelas (dilindungi autentikasi)  
-- 📊 `/api/dashboard` - Data dashboard (dilindungi autentikasi)  
-- ⚙️ `/api/settings` - Pengaturan aplikasi (dilindungi autentikasi)  
+### Backend Setup
 
----
+1.  Navigate to the backend directory:
+    ```sh
+    cd backend
+    ```
+2.  Install dependencies:
+    ```sh
+    npm install
+    ```
+3.  Set up your database and create a `.env` file with the necessary environment variables (e.g., `DATABASE_URL`, `JWT_SECRET`, etc.).
+4.  Run database migrations (if applicable).
+5.  Start the server:
+    ```sh
+    npm start
+    ```
+    The backend API should now be running on `http://localhost:5000`.
 
-## 🎨 Frontend
+## Folder Structure
 
-### 🔧 Teknologi
-
-- React 19 dengan TypeScript
-- Vite sebagai build tool dan dev server
-- Tailwind CSS untuk styling
-- React Router untuk navigasi halaman
-- Axios untuk komunikasi HTTP ke backend
-- Library tambahan: chart.js, html5-qrcode, qrcode.react, jspdf, dll.
-
-### ⚙️ Instalasi dan Menjalankan Frontend
-
-1. Masuk ke direktori frontend:
-   ```bash
-   cd fe-absensi-app
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Jalankan development server:
-   ```bash
-   npm run dev
-   ```
-   Aplikasi frontend akan berjalan dan dapat diakses di alamat yang ditampilkan (biasanya `http://localhost:5173`).
-
----
-
-## 💾 Database
-
-- Database menggunakan SQLite dengan file database berada di `backend/absensi.db`.
-- Database diinisialisasi otomatis saat backend dijalankan.
-
----
-
-## 📝 Cara Penggunaan
-
-1. Jalankan backend terlebih dahulu.  
-2. Jalankan frontend.  
-3. Akses aplikasi melalui browser pada alamat frontend.  
-4. Gunakan fitur absensi dengan QR Code sesuai kebutuhan.
-
----
-
-## 📄 Lisensi
-
-Proyek ini menggunakan lisensi ISC.
-Silakan digunakan dan dikembangkan untuk pembelajaran, penelitian, atau produksi. 🚀
-
----
-
-## 🤝 Kontribusi
-Kami terbuka untuk kolaborasi!
-Silakan buat Pull Request atau Issue jika menemukan bug, fitur baru, atau ingin ikut mengembangkan proyek ini.
-
----
-
-## 🙏 Terima Kasih
-Terima kasih telah menggunakan **Aplikasi Absensi dengan QR Code.**
-Aplikasi ini dikembangkan dengan semangat kolaborasi dan kemajuan teknologi pendidikan.
-Semoga dapat menjadi solusi praktis dalam menciptakan sistem absensi yang rapi, transparan, dan mudah digunakan.❤️
-
-Semoga bermanfaat dalam mendigitalisasi proses kehadiran di sekolah, kantor, atau instansi Anda! 🚀
-
----
+```
+siabsen/
+├── backend/
+│   └── ... (backend source files)
+└── fe-absensi-app/
+    ├── src/
+    │   ├── components/
+    │   ├── contexts/
+    │   ├── lib/
+    │   └── pages/
+    └── ... (config files like package.json, vite.config.ts)
+```
