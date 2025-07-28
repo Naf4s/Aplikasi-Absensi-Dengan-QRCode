@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 // @ts-ignore
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 // @ts-ignore
