@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Menu, X, School, LogIn } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import logo from '../../assets/logo.png';
 
 interface MainNavbarProps {
   isTransparent: boolean;
@@ -31,7 +32,7 @@ const MainNavbar: React.FC<MainNavbarProps> = ({ isTransparent }) => {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
-              <School className={`h-8 w-8 ${isTransparent ? 'text-white' : 'text-primary-800'}`} />
+              <img src={logo} alt="Logo" className={`h-8 w-8 `} />
               <span className="ml-2 text-lg font-bold">SD N 1 Bumirejo</span>
             </Link>
           </div>

@@ -9,6 +9,7 @@ import {
 // Added NewsManagement icon import
 import { FileText as NewsIcon } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import logo from '../../assets/logo.png';
 
 // Ini Wajib Kamu Ingat! (Prop untuk Kontrol Responsivitas)
 // Komponen sidebar ini menerima 'isOpen' dan 'onClose' dari parent (DashboardLayout).
@@ -31,12 +32,12 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isOpen, onClose }) 
       { name: 'Scanner QR', path: '/dashboard/scanner', icon: QrCode, permission: 'mark_attendance' },
       { name: 'Siswa', path: '/dashboard/students', icon: GraduationCap, permission: 'manage_students' },
       { name: 'Laporan', path: '/dashboard/reports', icon: BarChart2, permission: 'view_attendance' },
-      // Link Manajemen Pengguna dan Kelas hanya akan muncul jika user memiliki permission yang sesuai
       { name: 'Pengguna', path: '/dashboard/users', icon: Users, permission: 'manage_users' },
       { name: 'Kelas', path: '/dashboard/classes', icon: BookOpen, permission: 'manage_classes' },
-      { name: 'kenaikan kelas', path: '/dashboard/settings/promotion', icon: GraduationCap, permission: 'manage_classes' },
+      { name: 'Kenaikan Kelas', path: '/dashboard/settings/promotion', icon: GraduationCap, permission: 'manage_classes' },
       { name: 'Notifikasi Alpha', path: '/dashboard/alpha', icon: Send, permission: 'send_notification' },
       { name: 'News Management', path: '/dashboard/news-management', icon: NewsIcon, hideForRoles: ['teacher'] },
+      { name: 'Program Management', path: '/dashboard/program-management', icon: FileText, permission: 'manage_programs' },
       { name: 'Pengaturan', path: '/dashboard/settings', icon: Settings, permission: 'manage_access', end: true }
     ];
 
@@ -84,8 +85,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({ isOpen, onClose }) 
           {/* Sidebar header */}
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center">
-              <School className="h-7 w-7 text-primary-800" />
-              <h1 className="ml-2 text-lg font-bold text-gray-900">SIPABSEN</h1>
+              <img src={logo} alt="Logo" className="h-7 w-7" />
+              <h1 className="ml-2 text-lg font-bold text-gray-900">SIABSEN</h1>
             </div>
             {/* Tombol tutup di mobile */}
             <button 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../lib/api';
-import { School } from 'lucide-react';
+import logo from '../../assets/logo.png';
 
 interface Props {
   onSuccess: (message: string) => void;
@@ -78,7 +78,7 @@ const AcademicYearForm: React.FC<Props> = ({ onSuccess, onError }) => {
     <form onSubmit={handleSubmit} className="bg-white shadow-sm rounded-lg p-6 space-y-6 border border-gray-200">
       <div>
         <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-          <School className="h-5 w-5" />
+          <img src={logo} alt="Logo" className="h-5 w-5" />
           Pengaturan Tahun Ajaran
         </h2>
         <p className="text-sm text-gray-500">Setel tahun ajaran dan semester aktif saat ini.</p>

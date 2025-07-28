@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { School, ArrowLeft, Mail, Lock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import logo from '../assets/logo.png';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -35,9 +36,9 @@ const LoginPage: React.FC = () => {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <div className="mb-6 flex flex-col items-center">
-            <School className="h-12 w-12 text-primary-800" />
+            <img src={logo} alt="Logo" className="h-12 w-12" />
             <h2 className="mt-4 text-center text-2xl font-bold text-gray-900">
-              SIPABSEN SD N 1 Bumirejo
+              SIABSEN SD N 1 Bumirejo
             </h2>
             <p className="mt-1 text-center text-sm text-gray-600">
               Masuk ke sistem absensi

@@ -60,7 +60,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onMenuClick }) => {
 
         {/* School link - visible on mobile */}
         <Link to="/" className="md:hidden flex items-center">
-          <span className="text-lg font-bold text-primary-800">SIPABSEN</span>
+          <span className="text-lg font-bold text-primary-800">SIABSEN</span>
         </Link>
 
         {/* Info Tahun Ajaran & Semester */}

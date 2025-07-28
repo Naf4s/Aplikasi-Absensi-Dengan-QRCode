@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { School, Mail, Phone, MapPin, Facebook, Instagram, Youtube } from 'lucide-react';
+import logo from '../../assets/logo.png';
 
 const MainFooter: React.FC = () => {
   return (
@@ -10,7 +11,7 @@ const MainFooter: React.FC = () => {
           {/* School Info */}
           <div>
             <div className="flex items-center mb-4">
-              <School className="h-8 w-8 text-primary-400" />
+              <img src={logo} alt="Logo" className="h-8 w-8" />
               <span className="ml-2 text-xl font-bold">SD N 1 Bumirejo</span>
             </div>
             <p className="text-gray-400 mb-4">
